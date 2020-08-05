@@ -1,8 +1,7 @@
 Suomi on jakautunut erilaisiin alueisiin.
 
 Datan avulla ohjaamattoman oppimisen kautta on mahdollista löytää erilaisia alueellisia klustereita. Nämä ennusteet perustuvat noin vuoden vanhaan dataan verottajalta sekä alkuvuoden tilanteeseen tilastokeskukselta. Postilta taasen on saatu tarkemmat tiedot postinumeroista. Äänestysdata on vaalidatassa jaoteltu äänestysalueiden mukaan. Äänestysdata on viety postinumeroalueelle kiinteistörekisterin kautta, sillä kiinteistörekisterissä on sekä postinumero että äänestysalue.
-Tarkempi analyysi postinumeroalueiden polarisaatiosta tulee myöhemmin. Tässä kuitenkin alustavia arvioita Uudeltamaalta. Klusteroinnilla saadaan selville, että ydinkeskusta on oma hyvinvoiva klusterinsa. Keskustaa lähellä on lähiöalueita, laajempia lähialueita ja sen lisäksi maaseutumaista aluetta. 
-Esimerkiksi keskusta asumista selittää seuraavat muuttujat.
+Tarkempi analyysi postinumeroalueiden polarisaatiosta tulee myöhemmin. Tässä kuitenkin alustavia arvioita Uudeltamaalta. Klusteroinnilla saadaan selville, että ydinkeskusta on oma hyvinvoiva klusterinsa. Keskustaa lähellä on lähiöalueita, laajempia lähialueita ja sen lisäksi maaseutumaista aluettaan. 
 
 Postinumeroista saa aika hyvin tietoa mm. tilastokeskukselta.
 Teknisesti data-analyysi on toteutettu lukemalla rajapintojen kautta tietoja suoraan dataframeille. Tässä ei tallenneta erikseen CSV-tiedostoja, vaan kaikki datat luetaan suoraan lähteiden kautta. Koska tiedostojen lukeminen on aika hidasta, oli pakko toteuttaa tiedostojen väliaikaista kirjoittamista erillisiksi tiedostoiksi. Tämä kokonaisuus toimii myös ilman väliaikaistiedostoja. 
