@@ -44,11 +44,11 @@ def read_and_merge_all(path):
     stat_url = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/Postinumeroalueittainen_avoin_tieto/2020/paavo_pxt_12f7.px"
     stat_url_kunta = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/Postinumeroalueittainen_avoin_tieto/2020/paavo_pxt_12f8.px" 
   
-    data_list_post1=["pinta_ala","he_vakiy","he_miehet","he_naiset","he_kika","he_0_2","he_3_6","he_7_12",
-                     "he_13_15","he_16_17","he_18_19","he_20_24","he_25_29","he_30_34","he_35_39",
-                     "he_40_44","he_45_49","he_50_54","he_55_59","he_60_64","he_65_69","he_70_74",
-                     "he_75_79","he_80_84","he_85_","ko_ika18y","ko_perus","ko_koul","ko_yliop",
-                     "ko_ammat","ko_al_kork","ko_yl_kork","hr_tuy"]
+    data_list_post1=["euref_x","euref_y", "pinta_ala","he_vakiy","he_miehet","he_naiset","he_kika",
+                     "he_0_2","he_3_6","he_7_12","he_13_15","he_16_17","he_18_19","he_20_24","he_25_29",
+                     "he_30_34","he_35_39","he_40_44","he_45_49","he_50_54","he_55_59","he_60_64","he_65_69",
+                     "he_70_74","he_75_79","he_80_84","he_85_","ko_ika18y","ko_perus","ko_koul","ko_yliop",
+                     "ko_ammat","ko_al_kork","ko_yl_kork"]
 
     data_list_post2=["hr_ktu","hr_mtu","hr_pi_tul","hr_ke_tul","hr_hy_tul","hr_ovy","te_taly","te_takk",
                      "te_as_valj","te_nuor","te_eil_np","te_laps","te_plap","te_aklap","te_klap","te_teini",

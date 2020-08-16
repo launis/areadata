@@ -1,4 +1,4 @@
-def create_new_values(stat):
+def create_new_values(stat, vaalidata):
     """
     inpute null sets values for NA & 0 of postcodes based on the values
     of muncipalities
@@ -96,5 +96,21 @@ def create_new_values(stat):
     
     stat['Äänestysosuus'] =stat['Äänet yhteensä lkm Äänet']/stat['Äänet yhteensä lkm Äänioikeutetut yhteensä']
 
-    
+
+    for puolue in vaalidata['Puolueen nimilyhenne suomeksi'].unique():
+        lkm = "Äänet yhteensä lkm " + puolue
+        osuus = "Ääniosuus " + puolue
+        stat.loc[:,osuus] = stat[lkm]/stat.groupby(['Postinumero'])['Äänet yhteensä lkm Äänet'].transform(sum)    
+
+    for puolue in vaalidata['Puolueen nimilyhenne suomeksi'].unique():
+        lkm = "Vaalipäivän äänet lkm " + puolue
+        osuus = "Ääniosuus Vaalipäivän äänet " + puolue
+        stat.loc[:,osuus] = stat[lkm]/stat.groupby(['Postinumero'])['Vaalipäivän äänet lkm Äänet'].transform(sum)    
+
+    for puolue in vaalidata['Puolueen nimilyhenne suomeksi'].unique():
+        lkm = "Ennakkoäänet lkm " + puolue
+        osuus = "Ääniosuus Ennakkoäänet " + puolue
+        stat.loc[:,osuus] = stat[lkm]/stat.groupby(['Postinumero'])['Ennakkoäänet lkm Äänet'].transform(sum)    
+
+
     return(stat)

@@ -66,7 +66,8 @@ def prepare_and_scale_data(train, test, numeric_features,  categorical_features)
     
     train = train.replace([np.inf, -np.inf], np.nan)
     train.dropna(inplace=True)
-    data = train.copy()
+    train.reset_index(drop=True, inplace=True)
+
     
     train_scaled, column_list_train = scale(train, numeric_features, categorical_features)    
     col_selected = numeric_features + categorical_features
@@ -74,6 +75,8 @@ def prepare_and_scale_data(train, test, numeric_features,  categorical_features)
     if not test.empty:
         test = test.replace([np.inf, -np.inf], np.nan)
         test.dropna(inplace=True)
+        test.reset_index(drop=True, inplace=True)
+
         test_scaled, column_list_test = scale(test, numeric_features, categorical_features)
 
         #The creation of dummy values can create different set of columns between train/test
@@ -87,10 +90,12 @@ def prepare_and_scale_data(train, test, numeric_features,  categorical_features)
         test_non_scaled = pd.concat([test[numeric_features], 
                                      test_scaled[list(OrderedSet(column_list) - OrderedSet(col_selected))]], axis = 1)
 
-        return(data, train_scaled, train_non_scaled, test_scaled, test_non_scaled)
+
+        return(train, train_scaled, train_non_scaled, test_scaled, test_non_scaled)
     else:
         column_list = column_list_train
         train_non_scaled = pd.concat([train[numeric_features],
                                      train_scaled[list(OrderedSet(column_list) - OrderedSet(col_selected))]], axis = 1)
 
-        return(data, train_scaled, train_non_scaled)
+       
+        return(train, train_scaled, train_non_scaled)

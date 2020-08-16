@@ -36,7 +36,7 @@ def read_and_prepare_data(path):
     
     
     stat = create_share_of_values(stat)
-    stat = create_new_values(stat)
+    stat = create_new_values(stat, vaalidata)
     stat = delete_outliers(stat)
 
 

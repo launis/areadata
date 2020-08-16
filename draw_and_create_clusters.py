@@ -397,55 +397,12 @@ def draw_clusters(X, range_end):
     plt.ylabel('WCSS')
     plt.show()
     
-def draw_gaussian_mix(X):
+
+
+def create_kmeans_clusters(train, test, numeric_features=[], categorical_features=[], n_clusters=6, silhouette_print=0, scaled=True):
+
+    """
     
-    """
-    Create and draw gaussian mix
-    both bic &aic
-
-    args:
-        bic
-        aic
-  
-
-    Returns:         
-    """
-    from sklearn.mixture import GaussianMixture
-    import matplotlib.pyplot as plt
-
-    bic_list = []
-    aic_list = []
-    lowest_bic = 999
-    lowest_aic = 999
-    ranges = range(1,40)
-
-    for i in ranges:
-        gmm = GaussianMixture(n_components=i).fit(X)
-        # BIC
-        bic = gmm.bic(X)
-        bic_list.append(bic)
-        if bic_list[-1] < lowest_bic:
-            lowest_bic = bic_list[-1]
-            best_gmm_bic = gmm
-
-        # AIC
-        aic = gmm.aic(X)
-        aic_list.append(aic)
-
-        if aic_list[-1] < lowest_aic:
-            lowest_aic = aic_list[-1]
-            best_gmm_aic = gmm
-                
-    plt.figure(figsize=(15, 8))
-    plt.plot(ranges, bic_list, label='BIC');
-    plt.plot(ranges, aic_list, label='AIC');
-    plt.legend(loc='best')
-    return(best_gmm_bic, best_gmm_aic)    
-    
-
-
-def create_kmeans_clusters(data, X, n_clusters, silhouette_print=0):
-    """
     Scale data, geneate categorcal columns
     and create Kmeans model
     args:
@@ -464,7 +421,19 @@ def create_kmeans_clusters(data, X, n_clusters, silhouette_print=0):
     from sklearn.cluster import KMeans
     import geopandas as gp
     from sklearn import metrics
+    from prepare_and_scale_data import prepare_and_scale_data
+
     
+    data, train_scaled, train_non_scaled, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
+    if scaled:
+        X = train_scaled
+        test = test_scaled
+    else:
+        X = X_train
+        test = test_non_scaled
+    
+
+
     kmeans = KMeans(n_clusters=n_clusters, init = 'k-means++', n_init =  20, max_iter = 500)
     # We are going to use the fit predict method that returns for each #observation which cluster it belongs to. The cluster to which #client belongs and it will return this cluster numbers into a #single vector that is  called y K-means
     labels = kmeans.fit_predict(X)
@@ -475,5 +444,5 @@ def create_kmeans_clusters(data, X, n_clusters, silhouette_print=0):
         print('Number of clusters: %d' % n_clusters, "Silhouette Coefficient: %0.3f" % sscore, 'Calinski Harabaz Index: %d' % mscore)
     
     data = gp.GeoDataFrame(data, geometry='geometry')
-    return(kmeans, data)
+    return(data, X, test, kmeans)
 

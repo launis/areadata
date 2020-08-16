@@ -20,6 +20,7 @@ def one_value(gridsearch_params,
               params,
               dvalue,
               metrics,
+              num_boost_round,
               early_stopping_rounds,
               Skfold=True,
               verbose=False):
@@ -63,6 +64,8 @@ def one_value(gridsearch_params,
             dvalue,
             nfold =3,
             stratified=Skfold,
+            verbose_eval = 0,
+            num_boost_round = num_boost_round,
             early_stopping_rounds=early_stopping_rounds)
         
         # Update best result
@@ -95,6 +98,7 @@ def two_values(gridsearch_params,
                params,
                dvalue,
                metrics,
+               num_boost_round,
                early_stopping_rounds,
                Skfold=True,
                verbose=False):
@@ -141,6 +145,8 @@ def two_values(gridsearch_params,
             dvalue,
             nfold =3,
             stratified=Skfold,
+            verbose_eval = 0,
+            num_boost_round = num_boost_round,
             early_stopping_rounds=early_stopping_rounds)
        
         # Update best result
@@ -214,7 +220,7 @@ def hyperparameter_grid(params,
     )
     #for testing purposes a light set to save some time
     if testing:
-        rounds=1
+        rounds=2
         print('testing')
         gridsearch_params_tree = [
             (i, j)
@@ -253,6 +259,8 @@ def hyperparameter_grid(params,
             params,
             dvalue,
             stratified=Skfold,
+            num_boost_round = num_boost_round,
+            early_stopping_rounds = early_stopping_rounds,
             metrics= metrics
     )
    
@@ -266,12 +274,12 @@ def hyperparameter_grid(params,
         #Minimum sum of instance weight (hessian) needed in a child
         param_a = 'max_depth'
         param_b = 'min_child_weight'
-        params=two_values(gridsearch_params_tree, True, param_a, param_b, params, dvalue, metrics, early_stopping_rounds,  Skfold, Verbose)
+        params=two_values(gridsearch_params_tree, True, param_a, param_b, params, dvalue, metrics, num_boost_round, early_stopping_rounds,  Skfold, Verbose)
 
 
         #Gamma finds minimum loss reduction/min_split_loss required to make a further partition 
         param_a = 'gamma'
-        params=one_value(gridsearch_params_gamma, True, param_a, params, dvalue, metrics, early_stopping_rounds,  Skfold, Verbose)
+        params=one_value(gridsearch_params_gamma, True, param_a, params, dvalue, metrics, num_boost_round, early_stopping_rounds,  Skfold, Verbose)
     
 
         #L1 regularization term on weights - alpha  - Lasso Regression 
@@ -281,23 +289,23 @@ def hyperparameter_grid(params,
         #the sample is so small, so most propably no effect
         param_a = 'lambda'
         param_b = 'alpha'
-        params=two_values(gridsearch_params_pair_0_1 , True, param_a, param_b, params, dvalue, metrics, early_stopping_rounds, Skfold, Verbose)
+        params=two_values(gridsearch_params_pair_0_1 , True, param_a, param_b, params, dvalue, metrics, num_boost_round, early_stopping_rounds, Skfold, Verbose)
 
 
         #Subsamble denotes the fraction of observations to be randomly samples for each tree.
         #Colsample_bytree enotes the fraction of columns to be randomly samples for each tree.
         param_a = 'colsample_bytree'
         param_b = 'subsample'
-        params=two_values(gridsearch_params_pair_0_1, True, param_a, param_b, params, dvalue, metrics,early_stopping_rounds, Skfold, Verbose)
+        params=two_values(gridsearch_params_pair_0_1, True, param_a, param_b, params, dvalue, metrics, num_boost_round, early_stopping_rounds, Skfold, Verbose)
     
         #Same as learning_rate - this needs to be in sync with num_boost_round (alias n_tree parameter)
         param_a = 'eta'
-        params=one_value(gridsearch_params_0_1_deep, True, param_a, params, dvalue, metrics,early_stopping_rounds,  Skfold, Verbose)
+        params=one_value(gridsearch_params_0_1_deep, True, param_a, params, dvalue, metrics, num_boost_round, early_stopping_rounds,  Skfold, Verbose)
         
         #Balance of positive and negative weights.  This is regression and binary classification only parameter.
         if params['objective'].startswith('reg'):
             param_a = 'scale_pos_weight'
-            params=one_value(gridsearch_params_0_1_deep, True, param_a, params, dvalue, metrics, early_stopping_rounds, Skfold, Verbose)
+            params=one_value(gridsearch_params_0_1_deep, True, param_a, params, dvalue, metrics, num_boost_round, early_stopping_rounds, Skfold, Verbose)
 
 
     print('Found hyperparameters with {} rounds '.format(round+1))
@@ -331,15 +339,24 @@ def create_prediction(train, test, target, kbest_score_func, metric, params, num
     import pandas as pd
     from prepare_and_scale_data import prepare_and_scale_data
 
+    data = pd.DataFrame()
+    train_scaled = pd.DataFrame()
+    train_non_scaled = pd.DataFrame()
+    test_scaled = pd.DataFrame()
+    test_non_scaled = pd.DataFrame()
+
     
     #split the initial train dataframe to test/train dataframes
-    y_train = train[target]
+    
     data, train_scaled, train_non_scaled, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
-
+    y_train = data[target]
+    
     if scaled:
         X_train, X_test, y_train, y_test = train_test_split(train_scaled, y_train, test_size=test_size)
+        test = test_scaled
     else:
         X_train, X_test, y_train, y_test = train_test_split(train_non_scaled, y_train, test_size=test_size)
+        test = test_non_scaled
 
     features_df = select_kbest(X_train, y_train, kbest_score_func,k_selected)
     
@@ -369,6 +386,6 @@ def create_prediction(train, test, target, kbest_score_func, metric, params, num
 
     #test_pred = xgb.DMatrix(test_scale, label=y_data)
     y_pred = model.predict(dtest)
-    test.loc[:, "Ennustettu_" + target] = y_pred
+    data.loc[:, "Ennustettu " + target] = y_pred
     
-    return(test, features_df, importance_df, model, params, dXtest, X_train, y_train, X_test, y_test)
+    return(data, test, features_df, importance_df, model, params, dXtest, X_train, y_train, X_test, y_test)

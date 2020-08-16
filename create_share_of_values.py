@@ -68,8 +68,16 @@ def create_share_of_values(stat):
     group_column = 'total'
 
     col_list_add = ['Asuntojen keskipinta-ala, 2018 (RA)', 
-                'Talotyypit yhteensä 2019 Neliöhinta (EUR/m2)', 
-                'Asumisväljyys, 2018 (TE)', 'Asukkaiden keski-ikä, 2018 (HE)']    
+                    'Talouksien keskikoko, 2018 (TE)',
+                    'Asukkaiden keskitulot, 2017 (HR)',
+                    'Asukkaiden mediaanitulot, 2017 (HR)',
+                    'Asukkaiden ostovoimakertymä, 2017 (HR)',
+                    'Talouksien keskitulot, 2017 (TR)',
+                    'Talouksien mediaanitulot, 2017 (TR)',
+                    'Talouksien ostovoimakertymä, 2017 (TR)',
+                    'Talotyypit yhteensä 2019 Neliöhinta (EUR/m2)', 
+                    'Asumisväljyys, 2018 (TE)',
+                    'Asukkaiden keski-ikä, 2018 (HE)']    
 
     col_list_share = col_list_share  + col_list_add
 

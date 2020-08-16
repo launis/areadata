@@ -156,10 +156,6 @@ def aaniosuudet(kiint, post, url_puolueet, url_alueet):
 
     #partyvotes
     pnropuolue=postinumeroosuus.reset_index().groupby(['Postinumero', 'Puolueen nimilyhenne suomeksi'],as_index=False ).sum()[['Postinumero', 'Puolueen nimilyhenne suomeksi','Äänet yhteensä lkm', 'Ennakkoäänet lkm', 'Vaalipäivän äänet lkm']]
-    #share of partyvotes
-    pnropuolue['Ääniosuus'] = pnropuolue['Äänet yhteensä lkm']/pnropuolue.groupby(['Postinumero'])['Äänet yhteensä lkm'].transform(sum)
-    pnropuolue['Ääniosuus Ennakkoäänet'] = pnropuolue['Ennakkoäänet lkm']/pnropuolue.groupby(['Postinumero'])['Ennakkoäänet lkm'].transform(sum)
-    pnropuolue['Ääniosuus Vaalipäivän äänet'] = pnropuolue['Vaalipäivän äänet lkm']/pnropuolue.groupby(['Postinumero'])['Vaalipäivän äänet lkm'].transform(sum)
 
     #zeros to zeros
     pnropuolue['Äänet yhteensä lkm']=pnropuolue['Äänet yhteensä lkm'].astype(int)
@@ -171,7 +167,7 @@ def aaniosuudet(kiint, post, url_puolueet, url_alueet):
     pnropuolue['Vaalipäivän äänet lkm']=pnropuolue['Vaalipäivän äänet lkm'].astype(int)
     pnropuolue.loc[pnropuolue['Vaalipäivän äänet lkm']==0,'Ääniosuus Vaalipäivän äänet']=0
     
-    #pivot to otherway 
+    #pivot to otherway
     osuudet=pnropuolue.pivot(index='Postinumero', columns='Puolueen nimilyhenne suomeksi', values=['Äänet yhteensä lkm', 'Ääniosuus', 'Ennakkoäänet lkm', 'Ääniosuus Ennakkoäänet', 'Vaalipäivän äänet lkm', 'Ääniosuus Vaalipäivän äänet'])
     osuudet.fillna(0,inplace=True)
     osuudet.reset_index(level=[0], inplace=True)

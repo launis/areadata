@@ -1,5 +1,5 @@
 def reset_party_number(data):
-    """
+    """ 
     reset party number depending on the largest party
     party numbers change during the use of models
     there can be lesser parties so the partynumbers do not 
@@ -26,8 +26,8 @@ def reset_party_number(data):
         val = party[party['Suurin_puolue numero uusi numero']==data]['Suurin_puolue numero'].unique().item()
         return (val)
 
-    data.loc[:, 'Ennustettu_Suurin_puolue nimi']= data['Ennustettu_Suurin_puolue numero uusi numero'].apply(get_puolue_nimi)
-    data.loc[:, 'Ennustettu_Suurin_puolue numero']= data['Ennustettu_Suurin_puolue numero uusi numero'].apply(get_puolue_numero)
+    data.loc[:, 'Ennustettu Suurin_puolue nimi']= data['Ennustettu Suurin_puolue numero uusi numero'].apply(get_puolue_nimi)
+    data.loc[:, 'Ennustettu Suurin_puolue numero']= data['Ennustettu Suurin_puolue numero uusi numero'].apply(get_puolue_numero)
     puoluevari =  {'KD' : 'deepskyblue', 'KESK': 'darkgreen', 'KOK': 'blue', 'PS' : 'gold', 'RKP' : 'yellow', 'SDP' : 'pink', 'VAS' : 'red', 'VIHR': 'green'}
-    data['Ennustettu_puoluevari'] =  data['Ennustettu_Suurin_puolue nimi'].map(puoluevari)
+    data['Ennustettu puoluevari'] =  data['Ennustettu Suurin_puolue nimi'].map(puoluevari)
     return(data, class_names)
