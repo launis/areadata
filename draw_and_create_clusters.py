@@ -399,7 +399,7 @@ def draw_clusters(X, range_end):
     
 
 
-def create_kmeans_clusters(train, test, numeric_features=[], categorical_features=[], n_clusters=6, silhouette_print=0, scaled=True):
+def create_kmeans_clusters(filename_model, path, train, test, numeric_features=[], categorical_features=[], n_clusters=6, silhouette_print=0, scaled=True):
 
     """
     
@@ -418,6 +418,11 @@ def create_kmeans_clusters(train, test, numeric_features=[], categorical_feature
         data: al data together with cluster value
     """
 
+    import os
+    import pickle
+    from shapely import wkt
+
+    
     from sklearn.cluster import KMeans
     import geopandas as gp
     from sklearn import metrics
@@ -432,9 +437,15 @@ def create_kmeans_clusters(train, test, numeric_features=[], categorical_feature
         X = X_train
         test = test_non_scaled
     
+    filename_model = os.path.join(path, filename_model)
+    if os.access(filename_model, os.R_OK):
+        print('load model')
+        kmeans = pickle.load(open(filename_model, "rb"))
+    else:
+        print('Create model')
+        kmeans = KMeans(n_clusters=n_clusters, init = 'k-means++', n_init =  20, max_iter = 500)
+        pickle.dump(kmeans, open(filename_model, "wb"))
 
-
-    kmeans = KMeans(n_clusters=n_clusters, init = 'k-means++', n_init =  20, max_iter = 500)
     # We are going to use the fit predict method that returns for each #observation which cluster it belongs to. The cluster to which #client belongs and it will return this cluster numbers into a #single vector that is  called y K-means
     labels = kmeans.fit_predict(X)
     data['cluster'] = labels
@@ -443,6 +454,8 @@ def create_kmeans_clusters(train, test, numeric_features=[], categorical_feature
     if sscore >= silhouette_print:
         print('Number of clusters: %d' % n_clusters, "Silhouette Coefficient: %0.3f" % sscore, 'Calinski Harabaz Index: %d' % mscore)
     
+
+    #data['geometry'] = data['geometry'].apply(wkt.loads)
     data = gp.GeoDataFrame(data, geometry='geometry')
     return(data, X, test, kmeans)
 

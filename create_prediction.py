@@ -203,7 +203,7 @@ def hyperparameter_grid(params,
     import xgboost as xgb
     
     num_boost_round = 2000
-    early_stopping_rounds = 10
+    early_stopping_rounds = 50
     
     if Verbose == False:
         verbose_eval = num_boost_round
@@ -220,7 +220,7 @@ def hyperparameter_grid(params,
     )
     #for testing purposes a light set to save some time
     if testing:
-        rounds=2
+        rounds=1
         print('testing')
         gridsearch_params_tree = [
             (i, j)
@@ -237,7 +237,7 @@ def hyperparameter_grid(params,
             for i1 in gridsearch_params_0_1
             ]
     else: #for real
-        rounds=3
+        rounds=1
         print('for real')
         gridsearch_params_tree = [
             (i, j)
@@ -333,7 +333,9 @@ def hyperparameter_grid(params,
     
     return(best_model, params)
 
-def create_prediction(train, test, target, kbest_score_func, metric, params, numeric_features=[], categorical_features=[], scaled=False, k_selected = 'all', test_size = 0.2, Skfold=False, Verbose = False, testing=True):
+def create_prediction(filename_model, path, train, test, target, kbest_score_func, metric, params, numeric_features=[], categorical_features=[], scaled=False, k_selected = 'all', test_size = 0.2, Skfold=False, Verbose = False, testing=True):
+    import os
+    import pickle
     import xgboost as xgb
     from sklearn.model_selection import train_test_split
     import pandas as pd
@@ -363,7 +365,17 @@ def create_prediction(train, test, target, kbest_score_func, metric, params, num
     dXtrain = xgb.DMatrix(X_train, label=y_train)
     dXtest = xgb.DMatrix(X_test, label=y_test)
     watchlist = [(dXtrain, 'train'), (dXtest, 'test')]
-    model, params = hyperparameter_grid(params, dXtrain, metric, watchlist, testing, Skfold, Verbose)
+
+    
+    filename_model = os.path.join(path, filename_model)
+    if os.access(filename_model, os.R_OK):
+        print('load model')
+        model = pickle.load(open(filename_model, "rb"))
+    else:
+        print('Create model')
+        model, params = hyperparameter_grid(params, dXtrain, metric, watchlist, testing, Skfold, Verbose)
+        pickle.dump(model, open(filename_model, "wb"))
+    
     
     #Available importance_types = [‘weight’, ‘gain’, ‘cover’, ‘total_gain’, ‘total_cover’]
     importance_df = pd.DataFrame()
@@ -386,6 +398,5 @@ def create_prediction(train, test, target, kbest_score_func, metric, params, num
 
     #test_pred = xgb.DMatrix(test_scale, label=y_data)
     y_pred = model.predict(dtest)
-    data.loc[:, "Ennustettu " + target] = y_pred
     
-    return(data, test, features_df, importance_df, model, params, dXtest, X_train, y_train, X_test, y_test)
+    return(data, test, features_df, importance_df, model, params, y_pred, X_train, y_train, X_test, y_test)

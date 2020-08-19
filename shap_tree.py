@@ -23,6 +23,8 @@ def shap_tree(X_train, y_train, params):
         thismodel = xgb.XGBRegressor(**params)
     if params['objective'] == 'multi:softmax':
         thismodel = xgb.XGBClassifier(**params)
+    if params['objective'] == 'multi:softprob':
+        thismodel = xgb.XGBClassifier(**params)
         
     mymodel = thismodel.fit(X_train, y_train)
     mybooster = mymodel.get_booster()
