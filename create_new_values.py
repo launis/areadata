@@ -69,33 +69,12 @@ def create_new_values(stat, vaalidata):
     group_column = 'area_code'
     col_list = ['Postinumeroalueen pinta-ala']
     compare = 'sum'
+    
     for col in stat[col_list]:
         target_col = col + " osuus " + group_column
         stat[target_col] = stat[col] / stat.groupby(group_column)[col].transform(compare)
         stat[target_col].replace([np.inf, -np.inf], np.nan, inplace=True)
         stat[target_col].fillna(0, inplace=True)
-
-    #haetaan suurimman puolueen asema
-    aaniosuudet = stat.columns[stat.columns.str.startswith('Ääniosuus')].to_list()
-    for i in [s for s in aaniosuudet if s.startswith('Ääniosuus Ennakkoäänet')]:
-        aaniosuudet.remove(i)
-    for i in [s for s in aaniosuudet if s.startswith('Ääniosuus Vaalipäivän äänet')]:
-        aaniosuudet.remove(i)
-    
-    aaniosuudet.remove('Ääniosuus Hyväksytyt')
-    aaniosuudet.remove('Ääniosuus Mitättömät')
-    aaniosuudet.remove('Ääniosuus Äänioikeutetut yhteensä')
-    aaniosuudet.remove('Ääniosuus Äänet') 
-
-    #aaniosuudet = ['Ääniosuus KD', 'Ääniosuus KESK', 'Ääniosuus KOK', 'Ääniosuus RKP', 'Ääniosuus SDP', 'Ääniosuus VAS', 'Ääniosuus PS', 'Ääniosuus VIHR']
-    stat['Suurin_puolue'] = stat[aaniosuudet].idxmax(axis=1).str.split(' ', 1, expand=True)[1]
-    stat['Suurin_puolue numero'] = stat['Suurin_puolue'].astype('category').cat.codes
-    #ahvenanmaa RKP:lle
-    stat.loc[stat['area_code']=='FI200','Suurin_puolue numero'] = stat[stat['Suurin_puolue']=='RKP']['Suurin_puolue numero'].unique()[0]
-    stat.loc[stat['area_code']=='FI200','Suurin_puolue']='RKP'
-    
-    stat['Äänestysosuus'] =stat['Äänet yhteensä lkm Äänet']/stat['Äänet yhteensä lkm Äänioikeutetut yhteensä']
-
 
     for puolue in vaalidata['Puolueen nimilyhenne suomeksi'].unique():
         lkm = "Äänet yhteensä lkm " + puolue
@@ -112,5 +91,26 @@ def create_new_values(stat, vaalidata):
         osuus = "Ääniosuus Ennakkoäänet " + puolue
         stat.loc[:,osuus] = stat[lkm]/stat.groupby(['Postinumero'])['Ennakkoäänet lkm Äänet'].transform(sum)    
 
+    #haetaan suurimman puolueen asema
+    aaniosuudet = stat.columns[stat.columns.str.startswith('Ääniosuus')].to_list()
+    for i in [s for s in aaniosuudet if s.startswith('Ääniosuus Ennakkoäänet')]:
+        aaniosuudet.remove(i)
+    for i in [s for s in aaniosuudet if s.startswith('Ääniosuus Vaalipäivän äänet')]:
+        aaniosuudet.remove(i)
+        
+    aaniosuudet.remove('Ääniosuus Hyväksytyt')
+    aaniosuudet.remove('Ääniosuus Mitättömät')
+    aaniosuudet.remove('Ääniosuus Äänioikeutetut yhteensä')
+    aaniosuudet.remove('Ääniosuus Äänet') 
+    
+    
+    aaniosuudet = ['Ääniosuus KD', 'Ääniosuus KESK', 'Ääniosuus KOK', 'Ääniosuus RKP', 'Ääniosuus SDP', 'Ääniosuus VAS', 'Ääniosuus PS', 'Ääniosuus VIHR']
 
+    stat.loc[:,'Suurin_puolue'] = stat[aaniosuudet].idxmax(axis=1).str.split(' ', 1, expand=True)[1]
+    stat.loc[:,'Suurin_puolue numero'] = stat['Suurin_puolue'].astype('category').cat.codes
+    #ahvenanmaa RKP:lle
+    stat.loc[stat['area_code']=='FI200','Suurin_puolue numero'] = stat[stat['Suurin_puolue']=='RKP']['Suurin_puolue numero'].unique()[0]
+    stat.loc[stat['area_code']=='FI200','Suurin_puolue']='RKP'
+    
+    stat['Äänestysosuus'] =stat['Äänet yhteensä lkm Äänet']/stat['Äänet yhteensä lkm Äänioikeutetut yhteensä']
     return(stat)

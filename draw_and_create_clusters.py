@@ -420,7 +420,6 @@ def create_kmeans_clusters(filename_model, path, train, test, numeric_features=[
 
     import os
     import pickle
-    from shapely import wkt
 
     
     from sklearn.cluster import KMeans

@@ -101,11 +101,14 @@ def read_and_merge_all(path):
 
     
     
-    #4 postcode
+    #4 address register
+    #
+    # NOTE the value of url_kiinteisto changes regurally, couple of times per year
+    #
     #reads all needed addres register related statistical data either from file or calls a function to fetch data via API calls 
     #https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468
 
-    url_kiinteisto = "https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468/download/suomi_osoitteet_2020-05-15.7z"
+    url_kiinteisto = "https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468/download/suomi_osoitteet_2020-08-14.7z"
     kiinteisto = read_kiinteisto(path, url_kiinteisto)
 
     
@@ -145,6 +148,6 @@ def read_and_merge_all(path):
 
     post = pd.merge(left=post, right=areas, left_on='muncipality_code', right_on = 'Kuntanumero')
     post.drop(['Kuntanumero'], axis=1, inplace=True)
-    stat.drop(['postcode', 'postcode_name'], axis=1, inplace=True)
+    stat.drop(['postcode'], axis=1, inplace=True)
     return(stat, post, kunta_stat, vaalidata)    
     

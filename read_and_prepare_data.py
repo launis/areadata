@@ -61,9 +61,23 @@ def read_and_prepare_data(path):
     else:
         print(inspect.stack()[0][3],' read from start')
         stat, post, kunta_stat, vaalidata = read_and_merge_all(path)
-        col_list_sama_arvo  = ['Talotyypit yhteensä 2019 Neliöhinta (EUR/m2)', 'Asumisväljyys, 2018 (TE)', 'Asuntojen keskipinta-ala, 2018 (RA)']
-        col_list_osuuus  = ['Miehet, 2018 (HE)', 'Naiset, 2018 (HE)', 'Taloudet yhteensä, 2018 (TE)']
-        stat=inpute_null(stat, kunta_stat, col_list_sama_arvo, col_list_osuuus)
+        col_list_sama_arvo = ['Talotyypit yhteensä 2019 Neliöhinta (EUR/m2)', 'Asumisväljyys, 2018 (TE)', 'Asukkaiden keski-ikä, 2018 (HE)', 
+                                        'Asukkaiden keskitulot, 2017 (HR)', 'Talouksien keskitulot, 2017 (TR)',
+                                        'Asuntojen keskipinta-ala, 2018 (RA)', 'Talouksien keskikoko, 2018 (TE)',
+                                        'Asukkaiden ostovoimakertymä, 2017 (HR)', 'Talouksien mediaanitulot, 2017 (TR)', 
+                                        'Talouksien ostovoimakertymä, 2017 (TR)']
+        
+        col_list_osuuus_asukkaat  = ['Miehet, 2018 (HE)', 'Naiset, 2018 (HE)', 'Taloudet yhteensä, 2018 (TE)', 'Työlliset, 2017 (PT)', 'Työttömät, 2017 (PT)']
+        col_list_osuuus_taloudet  = ['Aikuisten taloudet, 2018 (TE)', 'Eläkeläisten taloudet, 2018 (TE)']
+        col_tot_asukkaat = 'Asukkaat yhteensä, 2018 (HE)'
+        col_tot_taloudet = 'Taloudet yhteensä, 2018 (TE)'
+
+        stat=inpute_null(stat, kunta_stat,
+                col_list_sama_arvo, 
+                col_list_osuuus_asukkaat,
+                col_list_osuuus_taloudet,
+                col_tot_taloudet,
+                col_tot_asukkaat)
 
         stat = create_share_of_values(stat)
         stat = create_new_values(stat, vaalidata)
