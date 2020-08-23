@@ -2,7 +2,7 @@ Suomi on jakautunut erilaisiin alueisiin.
 
 Katso tulokset https://www.launis.net/blank
 
-Tavanomaisten (sklearn, tensorflo) modulien lisäksi ainakin seuraavia moduuleja pitää olla ladattuna
+Tavanomaisten (sklearn, tensorflow) modulien lisäksi ainakin seuraavia moduuleja pitää olla ladattuna
 
 pyjstat https://pypi.org/project/pyjstat/
 shap https://pypi.org/search/?q=shap
