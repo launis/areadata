@@ -109,8 +109,8 @@ def create_new_values(stat, vaalidata):
     stat.loc[:,'Suurin_puolue'] = stat[aaniosuudet].idxmax(axis=1).str.split(' ', 1, expand=True)[1]
     stat.loc[:,'Suurin_puolue numero'] = stat['Suurin_puolue'].astype('category').cat.codes
     #ahvenanmaa RKP:lle
-    stat.loc[stat['area_code']=='FI200','Suurin_puolue numero'] = stat[stat['Suurin_puolue']=='RKP']['Suurin_puolue numero'].unique()[0]
-    stat.loc[stat['area_code']=='FI200','Suurin_puolue']='RKP'
-    
+    if len(stat[stat['area_code']=='FI200']) > 0:
+        stat.loc[stat['area_code']=='FI200','Suurin_puolue numero'] = stat[stat['Suurin_puolue']=='RKP']['Suurin_puolue numero'].unique()[0]
+        stat.loc[stat['area_code']=='FI200','Suurin_puolue']='RKP'   
     stat['Äänestysosuus'] =stat['Äänet yhteensä lkm Äänet']/stat['Äänet yhteensä lkm Äänioikeutetut yhteensä']
     return(stat)

@@ -82,11 +82,12 @@ def create_share_of_values(stat):
     col_list_share = col_list_share  + col_list_add
 
     for col in stat[col_list_share]:
-        target_col = col + " osuus " + group_column
-        stat[target_col] = stat[col] / stat[col].mean()
-        stat[target_col].replace([np.inf, -np.inf], np.nan, inplace=True)
-        stat[target_col].fillna(0, inplace=True)
-
+        if col != 'Suurin_puolue': #'Suurin puolue lisätään myöhemmin ja se on tekstiä, joten kun tätä käyteään muualla
+            target_col = col + " osuus " + group_column
+            stat[target_col] = stat[col] / stat[col].mean()
+            stat[target_col].replace([np.inf, -np.inf], np.nan, inplace=True)
+            stat[target_col].fillna(0, inplace=True)
+            
     for col in stat[col_list_tax_euros]:
         target_col = col + " osuus " + group_column
         stat[target_col] = (stat[col] / stat['1. Verotuspäätöksen saajien lukumäärä Yhteensä Saajien lukumäärä']) / (stat[col].mean() / stat['1. Verotuspäätöksen saajien lukumäärä Yhteensä Saajien lukumäärä'].mean())
