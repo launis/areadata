@@ -3,6 +3,8 @@ def create_example_df(data, X, included_columns, shap_index, shap_values, col_nu
     import numpy as np
     import pandas as pd
 
+    if type(included_columns) != list:
+        included_columns = [included_columns]
     shap_v = pd.DataFrame(shap_values[shap_index])
     feature_list = X.columns
     shap_v.columns = feature_list
@@ -25,7 +27,10 @@ def create_example_df(data, X, included_columns, shap_index, shap_values, col_nu
     k2 = k2.sort_values(by='SHAP_abs',ascending = False)
     col_list=k2['Variable'].head(col_num).to_list()
     new_x = list(OrderedSet(X.columns.to_list())- (OrderedSet(X.columns.to_list())-OrderedSet(col_list)))
+    new_x = list(OrderedSet(new_x)-OrderedSet(included_columns))
+    
     new_df=pd.concat([data[included_columns],X[new_x]], axis=1)
+    
     return(new_df, k2, col_list)
 
 def print_examples(new_df, target, shap_index, n=0):
@@ -38,7 +43,29 @@ def print_examples(new_df, target, shap_index, n=0):
     show_df = np.round(show_df,2)
     return(show_df)
 
+def find_most_different(data, compare_to, included_columns, row_type='std'):
 
+    import pandas as pd
+    
+    inc_1 = pd.DataFrame([compare_to[included_columns].describe().iloc[1, 0:]])
+    inc_2 = pd.DataFrame([data[included_columns].describe().iloc[1, 0:]])
+    incl_data = pd.concat([inc_1, inc_2])
+    incl_data = pd.DataFrame([incl_data.describe().loc[row_type, :]]).T.sort_values(row_type,ascending=False).copy()
+    incl_data.reset_index(inplace=True)
+
+    return(incl_data.iloc[0,0])
+
+def show_real_share(compare_to, sum_columns, share, total, list_of_members):
+    import pandas as pd
+    aanet = pd.DataFrame(columns=[share])
+    j=0
+    compare_to_party = pd.DataFrame(compare_to[sum_columns].sum())
+    for i in sum_columns:
+
+        aanet.loc[list_of_members[j]] = pd.Series({share : compare_to[i].sum()/compare_to[total].sum()})
+        j= j+1
+    aanet.plot(kind='bar', figsize=(15, 10))
+    return (aanet)
 
 def plot_difference(data, compare_to,  X, included_columns, shap_values, shap_index, col_num=6, scaled=False):
     import pandas as pd
@@ -47,15 +74,23 @@ def plot_difference(data, compare_to,  X, included_columns, shap_values, shap_in
     
     
     scaler = MinMaxScaler() 
+    new_df=pd.DataFrame()
+    new_reg_df=pd.DataFrame()
+    
+    if type(included_columns) != list:
+        included_columns = [included_columns]
+    included_columns = list(OrderedSet(included_columns)- (OrderedSet(included_columns)-OrderedSet(included_columns)))
 
     new_df, k2, col_list = create_example_df(compare_to, X, included_columns, shap_index, shap_values, col_num=col_num)
     new_df['df_type']=True
     
-    new_x = list(OrderedSet(X.columns.to_list())- (OrderedSet(X.columns.to_list())-OrderedSet(col_list)))    
+    new_x = list(OrderedSet(X.columns.to_list())- (OrderedSet(X.columns.to_list())-OrderedSet(col_list)))
+    new_x = list(OrderedSet(col_list)-OrderedSet(included_columns))
     new_reg_df = pd.concat([data[included_columns], X[new_x]], axis=1)
-
-    
     new_reg_df['df_type']=False
+
+    col_list = list(OrderedSet(col_list)-OrderedSet(included_columns))
+    col_list.extend(included_columns)
 
     if scaled:
         all_data = pd.concat([new_reg_df, new_df])
@@ -63,14 +98,10 @@ def plot_difference(data, compare_to,  X, included_columns, shap_values, shap_in
         all_data.loc[:,:] = scaled_values
         new_df = all_data[all_data['df_type']==True].copy()
         new_reg_df = all_data[all_data['df_type']==False].copy()
-        new_reg_df.drop(['df_type'], axis=1, inplace=True)
-        new_df.drop(['df_type'], axis=1, inplace=True)
-        
-    else:
-        if type(included_columns) == list:
-            col_list.extend(included_columns)
-        else:
-            col_list.append(included_columns)
+
+    new_reg_df.drop(['df_type'], axis=1, inplace=True)
+    new_df.drop(['df_type'], axis=1, inplace=True)        
+
     bar1 = pd.DataFrame([new_reg_df[col_list].describe().iloc[1, 0:]])
     bar1.rename(index={'mean':'Regural mean'},inplace=True)
     bar2 = pd.DataFrame([new_df[col_list].describe().iloc[1, 0:]])
