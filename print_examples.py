@@ -100,12 +100,15 @@ def plot_difference(data, compare_to,  X, included_columns, shap_values, shap_in
         new_reg_df = all_data[all_data['df_type']==False].copy()
 
     new_reg_df.drop(['df_type'], axis=1, inplace=True)
-    new_df.drop(['df_type'], axis=1, inplace=True)        
-
+    new_df.drop(['df_type'], axis=1, inplace=True)
     bar1 = pd.DataFrame([new_reg_df[col_list].describe().iloc[1, 0:]])
     bar1.rename(index={'mean':'Regural mean'},inplace=True)
-    bar2 = pd.DataFrame([new_df[col_list].describe().iloc[1, 0:]])
-    bar2.rename(index={'mean':'Selected mean'},inplace=True)
+    if len(new_df) == 1: #only one column, describe acts differently
+        bar2 = new_df[col_list]
+    else:
+        bar2 = pd.DataFrame([new_df[col_list].describe().iloc[1, 0:]])
+        bar2.rename(index={'mean':'Selected mean'},inplace=True)
+    
     stats_data = pd.concat([bar1, bar2])
 
     stats_data.plot(kind='bar', figsize=(15, 10))
