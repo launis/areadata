@@ -22,6 +22,9 @@ Tiedän, että peliteriassa muuttujat ovat kokonaisuus mutta halusin vaan kokeil
 
 Kokeilin myös yksittäisten rivien tasolla Shap mallia. Ilmeisesti tämä toimi, koska Westend näytti tietynlaisia arvoja punaisella.
 
+-------------------------------
+Teknisiä huomioita
+
 Ohjelmassa  read_and_merge_all oleva url_kiinteisto = "https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468/download/suomi_osoitteet_2020-08-14.7z" pitää vaihtaa aina tuoreimpaan sivustolta https://www.opendata.fi/data/fi/dataset/rakennusten-osoitetiedot-koko-suomi/resource/ae13f168-e835-4412-8661-355ea6c4c468. Jos haluaisi hienostella, tämänkin saisi automaattiseksi. Postin postitoimipaikkojen luvussa read_post_muncipalities, tätä on toteutettu automaattisesti.
 
 Tavanomaisten (sklearn, tensorflow) modulien lisäksi ainakin seuraavia moduuleja pitää olla ladattuna
