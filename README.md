@@ -33,13 +33,21 @@ Ohjelmassa  read_and_merge_all oleva url_kiinteisto = "https://www.avoindata.fi/
 Ainakin seuraavia moduuleja pitää olla ladattuna
 
 https://pypi.org/project/scikit-learn/
+
 pyjstat https://pypi.org/project/pyjstat/
+
 shap https://pypi.org/search/?q=shap
+
 py7zr https://pypi.org/project/py7zr/ #kiinteistörekisteri on pakattu näin
+
 https://pypi.org/project/xgboost/
+
 https://pypi.org/project/requests/
+
 https://pypi.org/project/Shapely/
+
 https://pypi.org/project/tensorflow/
+
 https://pypi.org/project/geopandas/
 
 Erllisten moduulien vaatimuksia:
