@@ -30,11 +30,17 @@ Teknisiä huomioita
 
 Ohjelmassa  read_and_merge_all oleva url_kiinteisto = "https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468/download/suomi_osoitteet_2020-08-14.7z" pitää vaihtaa aina tuoreimpaan sivustolta https://www.opendata.fi/data/fi/dataset/rakennusten-osoitetiedot-koko-suomi/resource/ae13f168-e835-4412-8661-355ea6c4c468. Jos haluaisi hienostella, tämänkin saisi automaattiseksi. Postin postitoimipaikkojen luvussa read_post_muncipalities, tätä on toteutettu automaattisesti.
 
-Tavanomaisten (sklearn, tensorflow) modulien lisäksi ainakin seuraavia moduuleja pitää olla ladattuna
+Ainakin seuraavia moduuleja pitää olla ladattuna
 
+https://pypi.org/project/scikit-learn/
 pyjstat https://pypi.org/project/pyjstat/
 shap https://pypi.org/search/?q=shap
-
+py7zr https://pypi.org/project/py7zr/ #kiinteistörekisteri on pakattu näin
+https://pypi.org/project/xgboost/
+https://pypi.org/project/requests/
+https://pypi.org/project/Shapely/
+https://pypi.org/project/tensorflow/
+https://pypi.org/project/geopandas/
 
 Erllisten moduulien vaatimuksia:
 Jos haluaa käyttää create_mlxtend -moduulia, tarvitaan  http://rasbt.github.io/mlxtend/user_guide/feature_selection/SequentialFeatureSelector/
