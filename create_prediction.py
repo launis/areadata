@@ -1,29 +1,14 @@
-def select_kbest(X, y, kbest_score_func, k='all'):
-    from sklearn.feature_selection import SelectKBest
-    import pandas as pd
-    
-    selector = SelectKBest(kbest_score_func, k=k)
-    selector.fit(X, y)
-    features_names = X.columns
-    features_scores = selector.scores_
-    features_selected = selector.get_support()
-    
-    dict = {'Column': features_names, 'Score': features_scores, 'Selected': features_selected}
-    features_df = pd.DataFrame(dict)
-    features_df.sort_values('Score', inplace=True, ascending=False)
-    features_df.reset_index(drop=True, inplace=True)
-    return(features_df)
+
 
 def one_value(gridsearch_params,
-              small_better,
               param_a,
               params,
-              dvalue,
-              metrics,
+              dtrain,
               num_boost_round,
               early_stopping_rounds,
               Skfold=True,
-              verbose=False):
+              nfold = 3,
+              Verbose =False):
     
     """This searches the best hyperparameter for selected hyperparameter
     
@@ -46,27 +31,36 @@ def one_value(gridsearch_params,
 
     import xgboost as xgb
     
+    small_better = True    
+    
+    if Verbose == False:
+        verbose_eval = 0
+    else:
+        verbose_eval = 10
+
     if small_better == True:
         result_best = float(999999)
     else:
         result_best = float(-999999)
     best_params = None
+    metrics = params['eval_metric']
 
     for i in gridsearch_params:
         # Update our parameters
-        if verbose:
+        if Verbose:
             print("xgb.cv with {}={}".format(param_a, i))
         params[param_a] = i
   
         # Run CV
         cv_results = xgb.cv(
             params,
-            dvalue,
-            nfold =3,
-            stratified=Skfold,
-            verbose_eval = 0,
+            dtrain,
+            verbose_eval = verbose_eval,
             num_boost_round = num_boost_round,
-            early_stopping_rounds=early_stopping_rounds)
+            early_stopping_rounds = early_stopping_rounds,
+            stratified = Skfold,
+            nfold=nfold,
+            metrics=metrics)
         
         # Update best result
         result_col = "test-" + metrics + "-mean"
@@ -84,7 +78,7 @@ def one_value(gridsearch_params,
             if result > result_best:
                 result_best = result
                 best_params = i
-        if verbose:
+        if Verbose:
             print("xgb.cv {} {} for {} rounds".format(metrics, result,  boost_rounds))
         
     print("Best xgb.cv params: {} {}, {}: {}".format(param_a, best_params, metrics, result_best))
@@ -92,16 +86,15 @@ def one_value(gridsearch_params,
     return(params)
 
 def two_values(gridsearch_params,
-               small_better,
                param_a,
                param_b,
                params,
-               dvalue,
-               metrics,
+               dtrain,
                num_boost_round,
                early_stopping_rounds,
                Skfold=True,
-               verbose=False):
+               nfold = 3,
+               Verbose =False):
 
     """This searches the best hyperparameter for the two selected hyperparameters
     
@@ -125,29 +118,38 @@ def two_values(gridsearch_params,
     
     import xgboost as xgb
     
+    small_better = True    
+    if Verbose == False:
+        verbose_eval = 0
+    else:
+        verbose_eval = 10
+    
     if small_better == True:
         result_best = float(999999)
     else:
         result_best = float(-999999)
     best_params = None
+    
+    metrics = params['eval_metric']
 
     for i, j in gridsearch_params:
         # Update our parameters
  
-        if verbose:
+        if Verbose:
             print("xgb.cv with {}={}, {}={}".format(param_a, i, param_b, j))
         params[param_a] = i
         params[param_b] = j
   
         # Run CV
-        cv_results = xgb.cv(
-            params,
-            dvalue,
-            nfold =3,
-            stratified=Skfold,
-            verbose_eval = 0,
-            num_boost_round = num_boost_round,
-            early_stopping_rounds=early_stopping_rounds)
+        cv_results = xgb.cv(            
+                params,
+                dtrain,
+                verbose_eval = verbose_eval,
+                num_boost_round = num_boost_round,
+                early_stopping_rounds = early_stopping_rounds,
+                stratified = Skfold,
+                nfold=nfold,
+                metrics=metrics)
        
         # Update best result
         result_col = "test-" + metrics + "-mean"
@@ -165,7 +167,7 @@ def two_values(gridsearch_params,
             if result > result_best:
                 result_best = result
                 best_params = (i,j)
-        if verbose:
+        if Verbose:
             print("xgb.cv {} {} for {} rounds".format(metrics, result, boost_rounds))
         
     print("Best xgb.cv params: {} {}, {} {}, {}: {}".format(param_a, best_params[0], param_b, best_params[1], metrics, result_best))
@@ -176,11 +178,10 @@ def two_values(gridsearch_params,
 
 def hyperparameter_grid(params,
                         dtrain,
-                        metrics,
-                        watchlist,
+                        dvalidate,
                         testing=True,
                         Skfold=False,
-                        Verbose=False):
+                        Verbose =False):
     
     """This function finds the optimum hyperparameters with a loop
     
@@ -202,69 +203,98 @@ def hyperparameter_grid(params,
     
     import xgboost as xgb
     
-    num_boost_round = 2000
+    num_boost_round = 9999
     early_stopping_rounds = 50
+    nfold=5
+    watchlist = [(dtrain, 'train'), (dvalidate, 'test')]
+    metrics = params['eval_metric']
     
     if Verbose == False:
-        verbose_eval = num_boost_round
+        verbose_eval = 0
     else:
         verbose_eval = 10
+    print("Initial parameters:")
+    print(params)
+    print()
+    
     
     model = xgb.train(
         params,
         dtrain,
-        verbose_eval=verbose_eval,
+        verbose_eval = num_boost_round,
         num_boost_round = num_boost_round,
         early_stopping_rounds = early_stopping_rounds,
-        evals=watchlist
-    )
+        evals = watchlist)
+    
+    
     #for testing purposes a light set to save some time
     if testing:
         rounds=1
         print('testing')
         gridsearch_params_tree = [
             (i, j)
-            for i in range(1,8)
-            for j in range(1,5)
+            for i in range(1,20)
+            for j in range(1,20)
             ]
         gridsearch_params_0_1 = [i/5. for i in range(0,6)]
         gridsearch_params_0_1_deep = [i/5. for i in range(0,6)]
         gridsearch_params_gamma = [i/5. for i in range(0,26)]
+        gridsearch_params_eta = [i/500 for i in range(0,201)]
+        gridsearch_params_colsamp = [i/20 for i in range(12,21)]
         
         gridsearch_params_pair_0_1 = [
             (i0, i1)
             for i0 in gridsearch_params_0_1
             for i1 in gridsearch_params_0_1
             ]
+        
+        gridsearch_params_colsamp_pair_0_1 = [
+            (i0, i1)
+            for i0 in gridsearch_params_colsamp
+            for i1 in gridsearch_params_colsamp
+            ]
+
     else: #for real
-        rounds=1
+        rounds=2
         print('for real')
         gridsearch_params_tree = [
             (i, j)
-            for i in range(1,20)
-            for j in range(1,20)
+            for i in range(1,25)
+            for j in range(1,25)
             ]
         gridsearch_params_0_1 = [i/20. for i in range(0,21)]
         gridsearch_params_0_1_deep = [i/50. for i in range(0,51)]
         gridsearch_params_gamma = [i/50. for i in range(0,251)]
+        gridsearch_params_eta = [i/1000 for i in range(0,401)]
+        gridsearch_params_colsamp = [i/50 for i in range(30,51)]
+
         gridsearch_params_pair_0_1 = [
             (i0, i1)
             for i0 in gridsearch_params_0_1_deep
             for i1 in gridsearch_params_0_1_deep
             ]
+        
+        gridsearch_params_colsamp_pair_0_1 = [
+            (i0, i1)
+            for i0 in gridsearch_params_colsamp
+            for i1 in gridsearch_params_colsamp
+            ]
+
     
-    dvalue = dtrain
     result_col = "test-" + metrics + "-mean"
-    cv_results = xgb.cv(
-            params,
-            dvalue,
-            stratified=Skfold,
-            num_boost_round = num_boost_round,
-            early_stopping_rounds = early_stopping_rounds,
-            metrics= metrics
+    cv_results = xgb.cv(            
+        params,
+        dtrain,
+        verbose_eval = verbose_eval,
+        num_boost_round = num_boost_round,
+        early_stopping_rounds = early_stopping_rounds,
+        stratified = Skfold,
+        nfold=nfold,
+        metrics=metrics
     )
+    
    
-    print("Start with xgb.cv params: {}: {}".format(metrics, cv_results[result_col].min()))
+    print("Unoptimized xgb.cv params xgb.cv params: {}: {}".format(metrics, cv_results[result_col].min()))
 
 
     #Tries to do semi-automatic genetic model for hyperparameter selection
@@ -274,13 +304,8 @@ def hyperparameter_grid(params,
         #Minimum sum of instance weight (hessian) needed in a child
         param_a = 'max_depth'
         param_b = 'min_child_weight'
-        params=two_values(gridsearch_params_tree, True, param_a, param_b, params, dvalue, metrics, num_boost_round, early_stopping_rounds,  Skfold, Verbose)
+        params=two_values(gridsearch_params_tree, param_a, param_b, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
 
-
-        #Gamma finds minimum loss reduction/min_split_loss required to make a further partition 
-        param_a = 'gamma'
-        params=one_value(gridsearch_params_gamma, True, param_a, params, dvalue, metrics, num_boost_round, early_stopping_rounds,  Skfold, Verbose)
-    
 
         #L1 regularization term on weights - alpha  - Lasso Regression 
         #adds “absolute value of magnitude” of coefficient as penalty term to the loss function.
@@ -289,24 +314,28 @@ def hyperparameter_grid(params,
         #the sample is so small, so most propably no effect
         param_a = 'lambda'
         param_b = 'alpha'
-        params=two_values(gridsearch_params_pair_0_1 , True, param_a, param_b, params, dvalue, metrics, num_boost_round, early_stopping_rounds, Skfold, Verbose)
+        params=two_values(gridsearch_params_pair_0_1 , param_a, param_b, params, dtrain,  num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
 
 
         #Subsamble denotes the fraction of observations to be randomly samples for each tree.
         #Colsample_bytree enotes the fraction of columns to be randomly samples for each tree.
         param_a = 'colsample_bytree'
         param_b = 'subsample'
-        params=two_values(gridsearch_params_pair_0_1, True, param_a, param_b, params, dvalue, metrics, num_boost_round, early_stopping_rounds, Skfold, Verbose)
+        params=two_values(gridsearch_params_colsamp_pair_0_1, param_a, param_b, params, dtrain, num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
     
         #Same as learning_rate - this needs to be in sync with num_boost_round (alias n_tree parameter)
         param_a = 'eta'
-        params=one_value(gridsearch_params_0_1_deep, True, param_a, params, dvalue, metrics, num_boost_round, early_stopping_rounds,  Skfold, Verbose)
+        params=one_value(gridsearch_params_eta, param_a, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
         
         #Balance of positive and negative weights.  This is regression and binary classification only parameter.
         if params['objective'].startswith('reg'):
             param_a = 'scale_pos_weight'
-            params=one_value(gridsearch_params_0_1_deep, True, param_a, params, dvalue, metrics, num_boost_round, early_stopping_rounds, Skfold, Verbose)
+            params=one_value(gridsearch_params_0_1_deep, param_a, params, dtrain, num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
 
+        #Gamma finds minimum loss reduction/min_split_loss required to make a further partition 
+        param_a = 'gamma'
+        params=one_value(gridsearch_params_gamma, param_a, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
+    
 
     print('Found hyperparameters with {} rounds '.format(round+1))
     print(params)
@@ -315,10 +344,10 @@ def hyperparameter_grid(params,
     model = xgb.train(
         params,
         dtrain,
-        verbose_eval=verbose_eval,
-        evals=watchlist,
+        verbose_eval = verbose_eval,
         num_boost_round = num_boost_round,
         early_stopping_rounds = early_stopping_rounds,
+        evals = watchlist,
         )   
         
     num_boost_round = model.best_iteration + 1
@@ -326,77 +355,153 @@ def hyperparameter_grid(params,
     best_model = xgb.train(
         params,
         dtrain,
-        num_boost_round=num_boost_round,
-        verbose_eval=verbose_eval,
-        evals=watchlist)
-    params['n_estimators']=num_boost_round
+        verbose_eval = num_boost_round,
+        num_boost_round = num_boost_round,
+        evals = watchlist,
+        )
+    print('Best numboost {} '.format(num_boost_round))
+    print()
+
     
     return(best_model, params)
 
-def create_prediction(filename_model, path, train, test, target, kbest_score_func, metric, params, numeric_features=[], categorical_features=[], scaled=False, k_selected = 'all', test_size = 0.2, Skfold=False, Verbose = False, testing=True):
+def optimize_one_par(filename_model, 
+                     path, 
+                     params,
+                     par,
+                     gridsearch_par,
+                     dtrain,
+                     dvalidate,
+                     Skfold=False,
+                     Verbose =False):
+    
+    """This function finds trainded model with one optimized hyperparameters with a loop
+
+    """
+    from create_prediction import one_value
+    from saveloadmodel import save_obj
+    import xgboost as xgb
     import os
-    import pickle
+    
+    num_boost_round = 9999
+    early_stopping_rounds = 50
+    nfold=5
+    
+    watchlist = [(dtrain, 'train'), (dvalidate, 'test')]
+    metrics = params['eval_metric']
+    
+    if Verbose == False:
+        verbose_eval = 0
+    else:
+        verbose_eval = 10
+    metrics = params['eval_metric']
+    
+    model = xgb.train(
+        params,
+        dtrain,
+        verbose_eval = verbose_eval,
+        num_boost_round = num_boost_round,
+        early_stopping_rounds = early_stopping_rounds,
+        evals = watchlist)
+
+    result_col = "test-" + metrics + "-mean"
+    cv_results = xgb.cv(
+        params,
+        dtrain,
+        verbose_eval = num_boost_round,
+        num_boost_round = num_boost_round,
+        early_stopping_rounds = early_stopping_rounds,
+        stratified = Skfold,
+        nfold=nfold,
+        metrics=metrics
+        )
+   
+    print("Unoptimized xgb.cv params: {}: {}".format(metrics, cv_results[result_col].min()))
+    params=one_value(gridsearch_par, par, params, dtrain, num_boost_round, early_stopping_rounds, Skfold=Skfold, nfold=nfold, Verbose=Verbose)
+
+    print('Found hyperparameters ')
+    print(params)
+    print()
+    
+    model = xgb.train(
+        params,
+        dtrain,
+        verbose_eval = verbose_eval,
+        num_boost_round = num_boost_round,
+        early_stopping_rounds = early_stopping_rounds,
+        evals = watchlist,
+        )   
+        
+    num_boost_round = model.best_iteration + 1
+
+    best_model = xgb.train(
+        params,
+        dtrain,
+        verbose_eval = 1,
+        num_boost_round = num_boost_round,
+        evals = watchlist,
+        )
+    
+    filename_model = os.path.join(path, filename_model)
+    save_obj(best_model, filename_model)
+    
+    return(best_model, params)
+
+
+
+def create_prediction(filename_model,  path, train, test, target, params, numeric_features=[], categorical_features=[], scaled=False, test_size = 0.2, Skfold=False, Verbose = False, testing=True):
+    import os
+    import json
     import xgboost as xgb
     from sklearn.model_selection import train_test_split
     import pandas as pd
     from prepare_and_scale_data import prepare_and_scale_data
+    from saveloadmodel import save_obj, load_obj
 
     data = pd.DataFrame()
     train_scaled = pd.DataFrame()
     train_non_scaled = pd.DataFrame()
     test_scaled = pd.DataFrame()
     test_non_scaled = pd.DataFrame()
-
     
     #split the initial train dataframe to test/train dataframes
     
-    data, train_scaled, train_non_scaled, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
-    y_train = data[target]
-    
+    data, train_scaled, train_non_scaled, test, test_scaled, test_non_scaled= prepare_and_scale_data(train, test, numeric_features, categorical_features)
+    y = data[target]
+
     if scaled:
-        X_train, X_test, y_train, y_test = train_test_split(train_scaled, y_train, test_size=test_size)
-        test = test_scaled
+        X_train, X_validate, y_train, y_validate = train_test_split(train_scaled, y, test_size=test_size, random_state=42)
+        X = train_scaled
+        X_test = test_scaled
     else:
-        X_train, X_test, y_train, y_test = train_test_split(train_non_scaled, y_train, test_size=test_size)
-        test = test_non_scaled
-
-    features_df = select_kbest(X_train, y_train, kbest_score_func,k_selected)
-    
-    dXtrain = xgb.DMatrix(X_train, label=y_train)
-    dXtest = xgb.DMatrix(X_test, label=y_test)
-    watchlist = [(dXtrain, 'train'), (dXtest, 'test')]
+        X_train, X_validate, y_train, y_validate = train_test_split(train_non_scaled, y, test_size=test_size, random_state=42)
+        X = train_non_scaled
+        X_test = test_non_scaled
 
     
+    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dvalidate = xgb.DMatrix(X_validate, label=y_validate)
+
     filename_model = os.path.join(path, filename_model)
-    if os.access(filename_model, os.R_OK):
-        print('load model')
-        model = pickle.load(open(filename_model, "rb"))
+    model = load_obj(filename_model)
+    if model == None:
+        model, params = hyperparameter_grid(params, dtrain, dvalidate, testing, Skfold, Verbose)
+        save_obj(model, filename_model)
     else:
-        print('Create model')
-        model, params = hyperparameter_grid(params, dXtrain, metric, watchlist, testing, Skfold, Verbose)
-        pickle.dump(model, open(filename_model, "wb"))
-    
-    
-    #Available importance_types = [‘weight’, ‘gain’, ‘cover’, ‘total_gain’, ‘total_cover’]
-    importance_df = pd.DataFrame()
-    for importance_type in ['weight', 'gain', 'cover', 'total_gain', 'total_cover']:
-        importance = model.get_score(importance_type=importance_type)
-        temp = pd.DataFrame.from_dict(importance, orient='index', columns=['Score'])
-        temp['Importance type'] = importance_type
-        importance_df = pd.concat([importance_df, temp])
-    
-    importance_df.reset_index(inplace=True)
-    importance_df.rename(columns={'index':'Feature'}, inplace=True)
-    importance_df.sort_values(['Importance type', 'Score'], inplace=True, ascending=False)
-    importance_df.reset_index(inplace=True, drop=True)
+        config = model.save_config()
+        list_of_float_params = ['max_depth', 'min_child_weight', 'lambda', 'alpha', 'colsample_bytree', 'subsample', 'eta', 'gamma']
+        list_of_int_params = ['max_depth', 'min_child_weight']
+        for par in list_of_float_params:
+            params[par] = float(json.loads(config)["learner"]["gradient_booster"]["updater"]["prune"]["train_param"][par])
+        for par in list_of_int_params:
+            params[par] = int(json.loads(config)["learner"]["gradient_booster"]["updater"]["prune"]["train_param"][par])
+        if params['objective'].startswith('reg'):
+            params["scale_pos_weight"] = float(json.loads(config)["learner"]["objective"]["reg_loss_param"]["scale_pos_weight"])
 
 
-    if scaled:
-        dtest = xgb.DMatrix(test_scaled)
-    else:
-        dtest = xgb.DMatrix(test_non_scaled)
-
+        
+    dtest = xgb.DMatrix(X_test)
     #test_pred = xgb.DMatrix(test_scale, label=y_data)
-    y_pred = model.predict(dtest)
+    y_test_pred = model.predict(dtest)
     
-    return(data, test, features_df, importance_df, model, params, y_pred, X_train, y_train, X_test, y_test)
+    return(data, X, y, test, X_test, y_test_pred, model, params)

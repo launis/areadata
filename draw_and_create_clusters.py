@@ -191,7 +191,7 @@ def display_parallel_coordinates_centroids(kmeans, labels=None):
 
     # Create the plot
     fig = plt.figure(figsize=(12, 5))
-    title = fig.suptitle("Parallel Coordinates plot for the Centroids", fontsize=12)
+    fig.suptitle("Parallel Coordinates plot for the Centroids", fontsize=12)
     fig.subplots_adjust(top=0.9, wspace=0)
 
     # Draw the chart
@@ -419,34 +419,30 @@ def create_kmeans_clusters(filename_model, path, train, test, numeric_features=[
     """
 
     import os
-    import pickle
-
     
     from sklearn.cluster import KMeans
     import geopandas as gp
     from sklearn import metrics
     from prepare_and_scale_data import prepare_and_scale_data
-
+    from saveloadmodel import save_obj, load_obj
     
-    data, train_scaled, train_non_scaled, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
+    data, train_scaled, train_non_scaled, test, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
     if scaled:
         X = train_scaled
-        test = test_scaled
+        X_test = test_scaled
     else:
-        X = X_train
-        test = test_non_scaled
+        X = train_non_scaled
+        X_test = test_non_scaled
     
     filename_model = os.path.join(path, filename_model)
-    if os.access(filename_model, os.R_OK):
-        print('load model')
-        kmeans = pickle.load(open(filename_model, "rb"))
-    else:
-        print('Create model')
-        kmeans = KMeans(n_clusters=n_clusters, init = 'k-means++', n_init =  20, max_iter = 500)
-        pickle.dump(kmeans, open(filename_model, "wb"))
+    model = load_obj(filename_model)
+    if model == None:
+        model = KMeans(n_clusters=n_clusters, init = 'k-means++', n_init =  20, max_iter = 500, random_state = 42)
+        save_obj(model, filename_model)    
+
 
     # We are going to use the fit predict method that returns for each #observation which cluster it belongs to. The cluster to which #client belongs and it will return this cluster numbers into a #single vector that is  called y K-means
-    labels = kmeans.fit_predict(X)
+    labels = model.fit_predict(X)
     data['cluster'] = labels
     sscore = metrics.silhouette_score(X, labels, metric='sqeuclidean')
     mscore = metrics.calinski_harabasz_score(X, labels)
@@ -456,5 +452,5 @@ def create_kmeans_clusters(filename_model, path, train, test, numeric_features=[
 
     #data['geometry'] = data['geometry'].apply(wkt.loads)
     data = gp.GeoDataFrame(data, geometry='geometry')
-    return(data, X, test, kmeans)
+    return(data, X, X_test, model)
 

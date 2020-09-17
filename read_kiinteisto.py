@@ -22,24 +22,26 @@ def kiinteisto(url):
          register of kiinteisto
     """
     import requests 
+    import os
     import py7zr
     import io
     import pandas as pd
     from supportfunctions import add_zeros
+    import tempfile
 
-    
     r = requests.get(url)
-
-    path = "/tmp"
     archive = py7zr.SevenZipFile(io.BytesIO(r.content))
-    archive.extractall(path=path)
-    datafile=path+"/"+archive.getnames()[0]
-    archive.close()
-    kiinteisto=pd.read_csv(datafile,sep=";", header=None, encoding="ISO-8859-1", low_memory=False)
+        
+    with tempfile.TemporaryDirectory() as local_path:
+        print('created temporary directory', local_path)
+        archive.extractall(path=local_path)
+        datafile = os.path.join(local_path, archive.getnames()[0] )
+        archive.close()
+        kiinteisto=pd.read_csv(datafile,sep=";", header=None, encoding="ISO-8859-1", low_memory=False)
     kiinteisto.columns=['Rakennustunnus','Kuntanumero','Maakunta','Käyttötarkoitus',
-              'Pohjoiskoordinaatti','Itäkoordinaatti','Osoitenumero','Kadunnimi suomeksi',
-              'Kadunnimi ruotsiksi','Katunumero','Postinumero','Äänestysalue','Äänestysalueen nimi suomeksi',
-              'Äänestysalueen nimi ruotsiksi','Sijaintikiinteistö','Tietojen poimintapäivä']
+                        'Pohjoiskoordinaatti','Itäkoordinaatti','Osoitenumero','Kadunnimi suomeksi',
+                        'Kadunnimi ruotsiksi','Katunumero','Postinumero','Äänestysalue','Äänestysalueen nimi suomeksi',
+                        'Äänestysalueen nimi ruotsiksi','Sijaintikiinteistö','Tietojen poimintapäivä']
 
     df_obj = kiinteisto.select_dtypes(['object'])
     kiinteisto[df_obj.columns] = df_obj.apply(lambda x: x.str.strip())

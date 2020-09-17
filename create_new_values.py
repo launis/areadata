@@ -103,6 +103,7 @@ def create_new_values(stat, vaalidata):
     aaniosuudet.remove('Ääniosuus Äänioikeutetut yhteensä')
     aaniosuudet.remove('Ääniosuus Äänet') 
     
+    stat.loc[:,'Ääniosuus Äänioikeutetut yhteensä'] = 1/stat['Ääniosuus Äänioikeutetut yhteensä']
     
     aaniosuudet = ['Ääniosuus KD', 'Ääniosuus KESK', 'Ääniosuus KOK', 'Ääniosuus RKP', 'Ääniosuus SDP', 'Ääniosuus VAS', 'Ääniosuus PS', 'Ääniosuus VIHR']
 

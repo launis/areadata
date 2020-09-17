@@ -14,7 +14,7 @@ def selected_cols(largeset = False, parties=True):
                              'Alemman korkeakoulututkinnon suorittaneet, 2018 (KO) osuudesta asukkaat',
                              'Ylemmän korkeakoulututkinnon suorittaneet, 2018 (KO) osuudesta asukkaat',
                              'Asukkaiden mediaanitulot, 2017 (HR) osuudesta asukkaat',
-                             'Asukkaiden ostovoimakertymä, 2017 (HR) osuudesta asukkaat',
+                             'Asukkaiden ostovoimakertymä, 2017 (HR) osuudesta asukkaat osuus total',
                              'Kerrostaloasunnot, 2018 (RA) osuudesta asukkaat',
                              'Kesämökit yhteensä, 2018 (RA) osuudesta asukkaat',
                              'Pientaloasunnot, 2018 (RA) osuudesta asukkaat',
@@ -70,7 +70,11 @@ def selected_cols(largeset = False, parties=True):
                              '1.1 Tuloverot yhteensä Yhteensä Summa, euroa osuus total',
                              '4.1.C Autoetu Yhteensä Summa, euroa osuus total',
                              '4.2 Työmatkakulujen perusteella palkkatulosta vähennettävä määrä (TVL 93 §) Yhteensä Summa, euroa osuus total',
-                             '5. Pääomatulot yhteensä Yhteensä Summa, euroa osuus total']
+                             '5. Pääomatulot yhteensä Yhteensä Summa, euroa osuus total',
+                             'Ruotsinkielisten osuus väestöstä, %, 2019',
+                             'Taajama-aste, %, 2018',
+                             'Ulkomaan kansalaisten osuus väestöstä, %, 2019',
+                             'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta']
 
     else:
         numeric_features = ['Miehet, 2018 (HE) osuudesta asukkaat',
@@ -126,7 +130,11 @@ def selected_cols(largeset = False, parties=True):
                              '1.1 Tuloverot yhteensä Yhteensä Summa, euroa osuus total',
                              '4.1.C Autoetu Yhteensä Summa, euroa osuus total',
                              '4.2 Työmatkakulujen perusteella palkkatulosta vähennettävä määrä (TVL 93 §) Yhteensä Summa, euroa osuus total',
-                             '5. Pääomatulot yhteensä Yhteensä Summa, euroa osuus total']
+                             '5. Pääomatulot yhteensä Yhteensä Summa, euroa osuus total',
+                             'Ruotsinkielisten osuus väestöstä, %, 2019',
+                             'Taajama-aste, %, 2018',
+                             'Ulkomaan kansalaisten osuus väestöstä, %, 2019',
+                             'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta']
 
     col_puolueet = ['Ääniosuus KD',
                     'Ääniosuus KESK',

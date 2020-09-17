@@ -33,7 +33,8 @@ def inpute_null(stat, kunta_stat,
             
         key = 'muncipality_code'
         for col in col_list_sama_arvo:
-            
+            if not col in stat.columns:
+                stat[col] = 0
             stat.loc[stat[col]==0,col] = stat[[key, col]].apply(add_values, axis=1)
             stat[col].fillna(stat[[key, col]].apply(add_values, axis=1), inplace=True)
             stat[col].fillna(0, inplace=True)
@@ -53,6 +54,8 @@ def inpute_null(stat, kunta_stat,
                 return(0)
         key = 'muncipality_code'    
         for col in col_list_osuuus:
+            if not col in stat.columns:
+                stat[col] = 0
             stat.loc[stat[col]==0,col] = stat[[key, col, col_tot]].apply(add_values, axis=1) 
             stat[col] = stat[col].astype(int)
                 

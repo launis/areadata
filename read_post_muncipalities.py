@@ -27,6 +27,7 @@ def read_post(url_geometry):
     import os
     import io
     import numpy as np
+    import tempfile
     
     from supportfunctions import add_zeros
 
@@ -72,28 +73,31 @@ def read_post(url_geometry):
     data['area_code']=data['area_code'].str.strip()
     
     #step2 read ploygons from Tilastokeskus
-    
-    
-    local_path = 'tmp/'
-    
-    #shapefile shoud be= "pno_tilasto.shp"
+
     r = requests.get(url_geometry)
     z = zipfile.ZipFile(io.BytesIO(r.content))
-    z.extractall(path=local_path) # extract to folder
-    filenames = [y for y in sorted(z.namelist()) for ending in ['cst', 'dbf', 'prj', 'shp', 'shx'] if y.endswith(ending)] 
-    cst, dbf, prj, shp, shx = [filename for filename in filenames]
-    pno_map = gp.read_file(local_path + shp)
-    #empty tmp files
-    for y in filenames:
-        os.remove(local_path + y)
-    os.remove(local_path + 'wfsrequest.txt')
-    pno_map = pno_map[['postinumer', 'geometry']]
+
+    with tempfile.TemporaryDirectory() as local_path:
+        print('created temporary directory', local_path)
+        z.extractall(path=local_path) # extract to folder
+        filenames = [y for y in sorted(z.namelist()) for ending in ['cst', 'dbf', 'prj', 'shp', 'shx'] if y.endswith(ending)] 
+        cst, dbf, prj, shp, shx = [filename for filename in filenames]
+        pno_map = gp.read_file(os.path.join(local_path,shp))
     
     #combine data
     post_all = pd.merge(data, pno_map, how='inner', left_on='postcode', right_on='postinumer',copy=True, sort=True)
-    post_all.drop(columns=['postinumer'], inplace=True)
-    #post_all = gp.GeoDataFrame(post_all, geometry='geometry')
-
+    post_all=post_all[['postcode',
+               'postcode_name',
+               'area_code',
+               'area_name',
+               'muncipality_code',
+               'muncipality_name',
+               'language_code',
+               'nimi',
+               'euref_x',
+               'euref_y',
+               'pinta_ala',
+               'geometry']].copy()
     return(post_all)
 
 

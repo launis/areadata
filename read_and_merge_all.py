@@ -12,14 +12,15 @@ def read_and_merge_all(path):
     """
 
 
-    import pandas as pd   
-
-
-    from read_post_muncipalities import read_post_muncipalities
-    from read_stats_postcode import read_stats_postcode 
-    from read_kiinteisto import read_kiinteisto 
-    from read_vaalit import read_vaalit
-    from read_ravintolat_ja_kaupat import read_ravintolat_ja_kaupat
+    import pandas as pd
+    from read_post_muncipalities import read_post 
+    from read_stats_postcode import kunta_stats, pnro_stats, read_json_stats    
+    from read_ravintolat_ja_kaupat import ravintolat_ja_kaupat    
+    from read_kiinteisto import kiinteisto
+    from read_vaalit import kiinteisto_alueiksi, aaniosuudet
+    
+    from supportfunctions import add_zeros_muncipality
+    import geopandas as gp
 
     #1 post & muncipalities
     
@@ -27,7 +28,15 @@ def read_and_merge_all(path):
     #https://www.stat.fi/static/media/uploads/org/avoindata/kartta-aineistojen_lataus_url-osoitteen_kautta_ohje.pdf
     #http://www.posti.fi/liitteet-yrityksille/ehdot/postinumeropalvelut-palvelukuvaus-ja-kayttoehdot.pdf
     url_geometry = "http://geo.stat.fi/geoserver/wfs?service=WFS&version=1.0.0&request=GetFeature&typeName=postialue:pno_tilasto&outputFormat=SHAPE-ZIP"    
-    post, muncipalities, postcode_list, muncipality_list=read_post_muncipalities(path, url_geometry)
+    post = read_post(url_geometry)
+    #post = gp.GeoDataFrame(post, geometry='geometry')
+    #create list of muncipalities from the reacent postcode data
+    muncipalities = post.groupby(['muncipality_code', 'muncipality_name'],as_index=False ).mean()[['muncipality_code', 'muncipality_name']][['muncipality_code', 'muncipality_name']]
+            
+    #make postcodes to lists
+    postcode_list = post['postcode'].tolist() 
+    #make muncipalities to lists and add zeros to muncipality_code
+    muncipality_list = muncipalities['muncipality_code'].apply(add_zeros_muncipality).to_list()
 
 
     #2 tilastokeskus, vero statistics
@@ -61,9 +70,12 @@ def read_and_merge_all(path):
                     "tp_k_raho","tp_l_kiin","tp_m_erik","tp_n_hall","tp_o_julk","tp_p_koul","tp_q_terv",
                     "tp_r_taid","tp_s_muup","tp_t_koti","tp_u_kans","tp_x_tunt","pt_vakiy","pt_tyoll",
                     "pt_tyott","pt_0_14","pt_opisk","pt_elakel","pt_muut"]
+    
+
+    data_list_posts=[data_list_post1, data_list_post2, data_list_post3]
 
     stat_url_kuntatiedot = 'https://pxnet2.stat.fi:443/PXWeb/api/v1/fi/Kuntien_avainluvut/2020/kuntien_avainluvut_2020_viimeisin.px'
-    data_list_muncipality=["M408","M404","M410","M297"]
+    data_list_muncipality=["M408","M476","M404","M410","M297"]
 
     stat_url_vero = "http://vero2.stat.fi/PXWeb/api/v1/fi/Vero/Henkiloasiakkaiden_tuloverot/lopulliset/postinum/postinum_104.px"
     stat_url_vero_kunta = 'http://vero2.stat.fi/PXWeb/api/v1/fi/Vero/Henkiloasiakkaiden_tuloverot/lopulliset/alue/alue_104.px'
@@ -72,23 +84,71 @@ def read_and_merge_all(path):
     stat_url_asunnot = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/asu/ashi/vv/statfin_ashi_pxt_112q.px"
     stat_url_asunnot_kunta = 'http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/asu/ashi/vv/statfin_ashi_pxt_112v.px'
 
-    stat, kunta_stat = read_stats_postcode(path,
-                                       data_list_post1,
-                                       data_list_post2,
-                                       data_list_post3,
-                                       data_list_muncipality,
-                                       data_list_vero,
-                                       muncipalities,
-                                       post,
-                                       postcode_list,
-                                       muncipality_list,
-                                       stat_url,
-                                       stat_url_kunta,
-                                       stat_url_kuntatiedot,
-                                       stat_url_vero,
-                                       stat_url_vero_kunta,
-                                       stat_url_asunnot,
-                                       stat_url_asunnot_kunta)
+       
+    postinumero = "Postinumeroalue"
+
+    stat = pd.DataFrame()
+    for values in data_list_posts:  
+        parameters = {"query":[{"code":"Postinumeroalue","selection":
+                               {"filter":"item","values":postcode_list}},
+                               {"code":"Tiedot","selection":{"filter":"item","values":values}}],
+                      "response":{"format":"json-stat"}}    
+        
+        stat_new=read_json_stats(stat_url, parameters, postinumero)
+        stat=pnro_stats(stat_new, postinumero, stat)
+
+        
+    #kuntadata demands in this case ku to the front
+    string = 'KU'
+    kuntatunnus = "Alue"
+    new_muncipality_list = [string + x for x in muncipality_list]
+    kunta_stat = pd.DataFrame()
+    for values in data_list_posts: 
+        parameters = {"query":[{"code":"Alue","selection":{"filter":"item","values":new_muncipality_list}},
+                               {"code":"Tiedot","selection":{"filter":"item","values":values}}],
+                      "response":{"format":"json-stat"}}
+        
+        stat_new=read_json_stats(stat_url_kunta, parameters, kuntatunnus)
+        kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
+
+
+    kuntatunnus = "Alue 2020"
+    parameters = {"query":[{"code":"Alue 2020","selection":{"filter":"item","values":muncipality_list}},
+                           {"code":"Tiedot","selection":{"filter":"item","values":data_list_muncipality}}],
+                  "response":{"format":"json-stat"}}
+
+    stat_new=read_json_stats(stat_url_kuntatiedot, parameters, kuntatunnus)
+    kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
+
+    #tax postcode
+    postcode_vero_list = (post['muncipality_code'].apply(lambda x: "{:03d}{}".format(x,"_")) + post['postcode']).to_list()
+        
+    parameters = {"query":[{"code":"Erä","selection":{"filter":"item","values":data_list_vero}},{"code":"Sukupuoli","selection":{"filter":"item","values":["S"]}},{"code":"Kuntapostinumero","selection":{"filter":"item","values":postcode_vero_list}},{"code":"Tunnusluvut","selection":{"filter":"item","values":["Sum","N"]}}],"response":{"format":"json-stat"}}
+    postinumero = "Kuntapostinumero"
+
+    stat_new=read_json_stats(stat_url_vero, parameters, postinumero)
+    stat=pnro_stats(stat_new, postinumero, stat)
+        
+    #tax muncipalities
+    parameters = {"query":[{"code":"Erä","selection":{"filter":"item","values":data_list_vero}},{"code":"Sukupuoli","selection":{"filter":"item","values":["S"]}},{"code":"Alue","selection":{"filter":"item","values":muncipality_list}},{"code":"Tunnusluvut","selection":{"filter":"item","values":["Sum","N"]}}],"response":{"format":"json-stat"}}
+    kuntatunnus = "Alue"
+    stat_new=read_json_stats(stat_url_vero_kunta, parameters, kuntatunnus)
+    kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
+
+    stat_url_asunnot = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/asu/ashi/vv/statfin_ashi_pxt_112q.px"
+    parameters = {"query":[{"code":"Postinumero","selection":{"filter":"item","values":postcode_list}},{"code":"Talotyyppi","selection":{"filter":"item","values":["6"]}},{"code":"Rakennusvuosi","selection":{"filter":"item","values":["0"]}},{"code":"Vuosi","selection":{"filter":"item","values":["2019"]}},{"code":"Tiedot","selection":{"filter":"item","values":["keskihinta_ptno"]}}],"response":{"format":"json-stat"}}
+    postinumero = "Postinumero"
+    stat_new=read_json_stats(stat_url_asunnot, parameters, postinumero)
+    stat=pnro_stats(stat_new, postinumero, stat)
+
+    parameters = {"query":[{"code":"Talotyyppi","selection":{"filter":"item","values":["0"]}},{"code":"Kunta","selection":{"filter":"item","values":muncipality_list}},{"code":"Vuosi","selection":{"filter":"item","values":["2019"]}},{"code":"Tiedot","selection":{"filter":"item","values":["keskihinta"]}}],"response":{"format":"json-stat"}}
+    stat_url_asunnot_kunta = 'http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/asu/ashi/vv/statfin_ashi_pxt_112v.px'
+    kuntatunnus = "Kunta"
+    stat_new=read_json_stats(stat_url_asunnot_kunta, parameters, kuntatunnus)
+    kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
+
+    #from some strange reason names are not equal in both
+    stat.rename(columns={'Talotyypit yhteensä Rakennusvuodet yhteensä 2019 Neliöhinta (EUR/m2)': "Talotyypit yhteensä 2019 Neliöhinta (EUR/m2)"}, inplace=True)
     
     
     #3 alco data
@@ -97,8 +157,8 @@ def read_and_merge_all(path):
     #https://www.avoindata.fi/data/fi/dataset/alkoholielinkeinorekisteri
  
     url_ravintolat = "http://avoindata.valvira.fi/alkoholi/alkoholilupa_toimipaikkatiedot_ABC.csv"
-    ravintolat = read_ravintolat_ja_kaupat(path, post, url_ravintolat)
 
+    ravintolat= ravintolat_ja_kaupat(url_ravintolat, post)
     
     
     #4 address register
@@ -109,7 +169,7 @@ def read_and_merge_all(path):
     #https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468
 
     url_kiinteisto = "https://www.avoindata.fi/data/dataset/cf9208dc-63a9-44a2-9312-bbd2c3952596/resource/ae13f168-e835-4412-8661-355ea6c4c468/download/suomi_osoitteet_2020-08-14.7z"
-    kiinteisto = read_kiinteisto(path, url_kiinteisto)
+    kiinteisto = kiinteisto(url_kiinteisto)
 
     
     #5 voting data 
@@ -120,9 +180,9 @@ def read_and_merge_all(path):
 
     url_puolueet = "https://tulospalvelu.vaalit.fi/EKV-2019/ekv-2019_puo_maa.csv.zip"
     url_alueet = 'https://tulospalvelu.vaalit.fi/EKV-2019/ekv-2019_alu_maa.csv.zip'
-    osuudet, vaalidata = read_vaalit(path, post, kiinteisto, url_puolueet, url_alueet)
+    kiint = kiinteisto_alueiksi(kiinteisto)
+    osuudet, vaalidata = aaniosuudet(kiint, post, url_puolueet, url_alueet)
 
-    
     
     #Next all data will be merged
     

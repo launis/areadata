@@ -46,15 +46,13 @@ def create_and_draw_best_gaussian_mix(filename_model_aic, filename_model_bic, pa
     ranges = range(1,40)
 
     
-    data, train_scaled, train_non_scaled, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
+    data, train_scaled, train_non_scaled, test, test_scaled, test_non_scaled = prepare_and_scale_data(train, test, numeric_features, categorical_features)
     if scaled:
         X = train_scaled
         test = test_scaled
     else:
         X = X_train
         test = test_non_scaled
-
- 
     
     filename_model_aic = os.path.join(path, filename_model_aic)    
     filename_model_bic = os.path.join(path, filename_model_bic)
