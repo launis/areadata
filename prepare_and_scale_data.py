@@ -60,15 +60,16 @@ def prepare_and_scale_data(train, test, numeric_features,  categorical_features)
 
         return(new_df, column_list)
 
-
-    train_scaled = pd.DataFrame()
-    test_scaled = pd.DataFrame()
-    
+    #remove nulls both from train and test    
     train = train.replace([np.inf, -np.inf], np.nan)
     train.dropna(inplace=True)
     train.reset_index(drop=True, inplace=True)
 
-    
+
+
+    train_scaled = pd.DataFrame()
+    test_scaled = pd.DataFrame()   
+ 
     train_scaled, column_list_train = scale(train, numeric_features, categorical_features)    
     col_selected = numeric_features + categorical_features
 
@@ -91,7 +92,7 @@ def prepare_and_scale_data(train, test, numeric_features,  categorical_features)
                                      test_scaled[list(OrderedSet(column_list) - OrderedSet(col_selected))]], axis = 1)
 
 
-        return(train, train_scaled, train_non_scaled, test_scaled, test_non_scaled)
+        return(train, train_scaled, train_non_scaled, test, test_scaled, test_non_scaled)
     else:
         column_list = column_list_train
         train_non_scaled = pd.concat([train[numeric_features],

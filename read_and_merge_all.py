@@ -18,9 +18,11 @@ def read_and_merge_all(path):
     from read_ravintolat_ja_kaupat import ravintolat_ja_kaupat    
     from read_kiinteisto import kiinteisto
     from read_vaalit import kiinteisto_alueiksi, aaniosuudet
+    from tkalueet import tkalueet
+    from kuntavero import kuntavero
+    from load_thl_data import read_all_sotka
     
     from supportfunctions import add_zeros_muncipality
-    import geopandas as gp
 
     #1 post & muncipalities
     
@@ -79,7 +81,9 @@ def read_and_merge_all(path):
 
     stat_url_vero = "http://vero2.stat.fi/PXWeb/api/v1/fi/Vero/Henkiloasiakkaiden_tuloverot/lopulliset/postinum/postinum_104.px"
     stat_url_vero_kunta = 'http://vero2.stat.fi/PXWeb/api/v1/fi/Vero/Henkiloasiakkaiden_tuloverot/lopulliset/alue/alue_104.px'
+    stat_url_vero_kunta = "http://vero2.stat.fi/PXWeb/api/v1/fi/Vero/Henkiloasiakkaiden_tuloverot/lopulliset/alue/Verovuosi 2018/alue_104_2018.px"
     data_list_vero = ["HVT_TULOT_10", "HVT_TULOT_50","HVT_TULOT_80","HVT_TULOT_220","HVT_TULOT_370","HVT_TULOT_410","HVT_TULOT_420","HVT_TULOT_430","HVT_TULOT_440","HVT_TULOT_450","HVT_TULOT_590","HVT_TULOT_630","HVT_TULOT_1330","HVT_TULOT_1080","HVT_VEROT_90","HVT_VAHENNYKSET_40","HVT_VAHENNYKSET_60","HVT_VAHENNYKSET_740","HVT_VAHENNYKSET_1080","HVT_VAHENNYKSET_1400","HVT_VEROT_20"]
+    
 
     stat_url_asunnot = "http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/asu/ashi/vv/statfin_ashi_pxt_112q.px"
     stat_url_asunnot_kunta = 'http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/asu/ashi/vv/statfin_ashi_pxt_112v.px'
@@ -103,7 +107,7 @@ def read_and_merge_all(path):
     kuntatunnus = "Alue"
     new_muncipality_list = [string + x for x in muncipality_list]
     kunta_stat = pd.DataFrame()
-    for values in data_list_posts: 
+    for values in data_list_posts:
         parameters = {"query":[{"code":"Alue","selection":{"filter":"item","values":new_muncipality_list}},
                                {"code":"Tiedot","selection":{"filter":"item","values":values}}],
                       "response":{"format":"json-stat"}}
@@ -120,6 +124,7 @@ def read_and_merge_all(path):
     stat_new=read_json_stats(stat_url_kuntatiedot, parameters, kuntatunnus)
     kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
 
+
     #tax postcode
     postcode_vero_list = (post['muncipality_code'].apply(lambda x: "{:03d}{}".format(x,"_")) + post['postcode']).to_list()
         
@@ -132,6 +137,7 @@ def read_and_merge_all(path):
     #tax muncipalities
     parameters = {"query":[{"code":"Erä","selection":{"filter":"item","values":data_list_vero}},{"code":"Sukupuoli","selection":{"filter":"item","values":["S"]}},{"code":"Alue","selection":{"filter":"item","values":muncipality_list}},{"code":"Tunnusluvut","selection":{"filter":"item","values":["Sum","N"]}}],"response":{"format":"json-stat"}}
     kuntatunnus = "Alue"
+    
     stat_new=read_json_stats(stat_url_vero_kunta, parameters, kuntatunnus)
     kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
 
@@ -147,18 +153,61 @@ def read_and_merge_all(path):
     stat_new=read_json_stats(stat_url_asunnot_kunta, parameters, kuntatunnus)
     kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
 
+    urlkuntavero = "https://www.kuntaliitto.fi/sites/default/files/media/file/Liite%203_Veroprosentit_vuodelle_2019_kuntakohtaiset_tiedot.xlsx"
+    kunta_stat = kuntavero(urlkuntavero, kunta_stat)
+
+    data_list_carclass = ["01","06","09"]
+    stat_url_car = 'https://pxnet2.stat.fi:443/PXWeb/api/v1/fi/StatFin/lii/mkan/statfin_mkan_pxt_11ic.px'
+    kuntatunnus = "Alue"
+    parameters = {"query": [{"code": kuntatunnus,"selection":{"filter": "item","values": new_muncipality_list}},
+                {"code": "Ajoneuvoluokka","selection": {"filter": "item", "values": data_list_carclass }},
+                {"code": "Liikennekäyttö","selection": {"filter": "item","values": ["0"]}},
+                {"code": "Vuosi","selection": {"filter": "item","values": ["2019"]}}],
+             "response": {"format": "json-stat"}}
+
+
+    stat_new=read_json_stats(stat_url_car, parameters, kuntatunnus)
+    kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
+    
+    data_list_vaesto = ["kokmuutos_p","tal_huoltos","vaesto_maa_pa","vaesto_ks_p","vaesto_k1_p",
+                      "vaesto_k2_p","vaesto_k3_p","vaesto_ms_p","vaesto_m4_p","vaesto_m5_p",
+                      "vaesto_m6_p","vaesto_m7_p"]
+    stat_url_vaesto = 'http://pxnet2.stat.fi/PXWeb/api/v1/fi/StatFin/vrm/vaerak/statfin_vaerak_pxt_11ra.px'
+    kuntatunnus = "Alue"
+            
+    parameters = {"query":[{"code": "Alue","selection":{
+                    "filter": "agg:_- Kunnat aakkosjärjestyksessä 2020.agg",
+                    "values": new_muncipality_list}},
+                {"code": "Tiedot","selection":{"filter":"item","values": data_list_vaesto}},
+                {"code": "Vuosi","selection": {"filter": "item","values": ["2019"]}}],
+              "response": {"format": "json-stat"}}
+
+    stat_new=read_json_stats(stat_url_vaesto, parameters, kuntatunnus)
+    kunta_stat = kunta_stats(stat_new, muncipalities, kuntatunnus, kunta_stat)
+    
+
     #from some strange reason names are not equal in both
     stat.rename(columns={'Talotyypit yhteensä Rakennusvuodet yhteensä 2019 Neliöhinta (EUR/m2)': "Talotyypit yhteensä 2019 Neliöhinta (EUR/m2)"}, inplace=True)
     
     
-    #3 alco data
+    
+    
+    year = 2019
+    region = 'kunta'
+    org = ['Terveyden ja hyvinvoinnin laitos (THL)',
+       'Työ- ja elinkeinoministeriö (TEM)', 'Kansaneläkelaitos (Kela)',
+       'Eläketurvakeskus (ETK)',
+       'Asumisen rahoitus- ja kehittämiskeskus (ARA)']
+    kunta_stat = read_all_sotka(year, kunta_stat, region, org)
+    
+    #3 alco data and tkarea
     #reads all needed license data to sell alcohol in pubs and shops data either from file or calls a function to fetch data via API calls 
 
     #https://www.avoindata.fi/data/fi/dataset/alkoholielinkeinorekisteri
  
     url_ravintolat = "http://avoindata.valvira.fi/alkoholi/alkoholilupa_toimipaikkatiedot_ABC.csv"
 
-    ravintolat= ravintolat_ja_kaupat(url_ravintolat, post)
+    ravintolat = ravintolat_ja_kaupat(url_ravintolat, post)
     
     
     #4 address register
@@ -207,6 +256,10 @@ def read_and_merge_all(path):
     stat.drop(['Kuntanumero'], axis=1, inplace=True)
 
     post = pd.merge(left=post, right=areas, left_on='muncipality_code', right_on = 'Kuntanumero')
+    
+    url_tkalueet ="https://www.stat.fi/fi/luokitukset/corrmaps/export/kunta_1_20200101%23tyossakayntial_1_20200101/"
+    stat = tkalueet(url_tkalueet, stat)
+
     post.drop(['Kuntanumero'], axis=1, inplace=True)
     stat.drop(['postcode'], axis=1, inplace=True)
     return(stat, post, kunta_stat, vaalidata)    

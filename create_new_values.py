@@ -11,7 +11,6 @@ def create_new_values(stat, vaalidata):
          stat
          
     """
-    import numpy as np
         
     target = 'Keskitulot'
     summa  = '2. Tulot yhteensä Yhteensä Summa, euroa'
@@ -63,19 +62,7 @@ def create_new_values(stat, vaalidata):
     stat[target] = 0
     stat.loc[stat[maara]>0, target] = 100000 * stat[summa]/stat[maara]
 
-
-
-    #postinumeroalueen pinta-ala suhteessa alueeseen
-    group_column = 'area_code'
-    col_list = ['Postinumeroalueen pinta-ala']
-    compare = 'sum'
     
-    for col in stat[col_list]:
-        target_col = col + " osuus " + group_column
-        stat[target_col] = stat[col] / stat.groupby(group_column)[col].transform(compare)
-        stat[target_col].replace([np.inf, -np.inf], np.nan, inplace=True)
-        stat[target_col].fillna(0, inplace=True)
-
     for puolue in vaalidata['Puolueen nimilyhenne suomeksi'].unique():
         lkm = "Äänet yhteensä lkm " + puolue
         osuus = "Ääniosuus " + puolue

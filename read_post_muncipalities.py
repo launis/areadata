@@ -59,8 +59,8 @@ def read_post(url_geometry):
     #if Swedish speaking (language code = 4) then use it as a postcode_name and muncipality_name
     
     data['postcode_name']=np.where(data['language_code']==4, data['postcode_sv_name'], data['postcode_name'])
-    data['muncipality_name']=np.where(data['language_code']==4, data['muncipality_sv_name'], data['muncipality_name'])
-
+    #data['muncipality_name']=np.where(data['language_code']==4, data['muncipality_sv_name'], data['muncipality_name'])
+    
 
     #drop no more needed columns
     data=data.drop(columns=['postcode_sv_name', 'type', 'type', 'muncipality_sv_name'])
@@ -71,6 +71,9 @@ def read_post(url_geometry):
     data['muncipality_code']=pd.to_numeric(data['muncipality_code'], errors='ignore')
     data['area_name']=data['area_name'].str.strip()
     data['area_code']=data['area_code'].str.strip()
+
+    #Pedersöre is an odd one
+    data.loc[data['muncipality_name']=='Pedersöre','muncipality_name'] = 'Pedersören kunta'
     
     #step2 read ploygons from Tilastokeskus
 

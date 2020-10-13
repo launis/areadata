@@ -226,142 +226,143 @@ def hyperparameter_grid(params,
         early_stopping_rounds = early_stopping_rounds,
         evals = watchlist)
     
+    if testing is not None:
+        #for testing purposes a light set to save some time
+        if testing:
+            rounds=1
+            print('testing')
+            gridsearch_params_tree = [
+                (i, j)
+                for i in range(1,20)
+                for j in range(1,20)
+                ]
+            gridsearch_params_0_1 = [i/5. for i in range(0,6)]
+            gridsearch_params_0_1_deep = [i/5. for i in range(0,6)]
+            gridsearch_params_gamma = [i/5. for i in range(0,26)]
+            gridsearch_params_eta = [i/500 for i in range(0,201)]
+            gridsearch_params_colsamp = [i/20 for i in range(12,21)]
+        
+            gridsearch_params_pair_0_1 = [
+                (i0, i1)
+                for i0 in gridsearch_params_0_1
+                for i1 in gridsearch_params_0_1
+                ]
+        
+            gridsearch_params_colsamp_pair_0_1 = [
+                (i0, i1)
+                for i0 in gridsearch_params_colsamp
+                for i1 in gridsearch_params_colsamp
+                ]
+
+        else: #for real
+            rounds=2
+            print('for real')
+            gridsearch_params_tree = [
+                (i, j)
+                for i in range(1,25)
+                for j in range(1,25)
+                ]
+            gridsearch_params_0_1 = [i/20. for i in range(0,21)]
+            gridsearch_params_0_1_deep = [i/50. for i in range(0,51)]
+            gridsearch_params_gamma = [i/50. for i in range(0,251)]
+            gridsearch_params_eta = [i/1000 for i in range(0,401)]
+            gridsearch_params_colsamp = [i/50 for i in range(30,51)]
+
+            gridsearch_params_pair_0_1 = [
+                (i0, i1)
+                for i0 in gridsearch_params_0_1_deep
+                for i1 in gridsearch_params_0_1_deep
+                ]
+        
+            gridsearch_params_colsamp_pair_0_1 = [
+                (i0, i1)
+                for i0 in gridsearch_params_colsamp
+                for i1 in gridsearch_params_colsamp
+                ]
+
     
-    #for testing purposes a light set to save some time
-    if testing:
-        rounds=1
-        print('testing')
-        gridsearch_params_tree = [
-            (i, j)
-            for i in range(1,20)
-            for j in range(1,20)
-            ]
-        gridsearch_params_0_1 = [i/5. for i in range(0,6)]
-        gridsearch_params_0_1_deep = [i/5. for i in range(0,6)]
-        gridsearch_params_gamma = [i/5. for i in range(0,26)]
-        gridsearch_params_eta = [i/500 for i in range(0,201)]
-        gridsearch_params_colsamp = [i/20 for i in range(12,21)]
-        
-        gridsearch_params_pair_0_1 = [
-            (i0, i1)
-            for i0 in gridsearch_params_0_1
-            for i1 in gridsearch_params_0_1
-            ]
-        
-        gridsearch_params_colsamp_pair_0_1 = [
-            (i0, i1)
-            for i0 in gridsearch_params_colsamp
-            for i1 in gridsearch_params_colsamp
-            ]
-
-    else: #for real
-        rounds=2
-        print('for real')
-        gridsearch_params_tree = [
-            (i, j)
-            for i in range(1,25)
-            for j in range(1,25)
-            ]
-        gridsearch_params_0_1 = [i/20. for i in range(0,21)]
-        gridsearch_params_0_1_deep = [i/50. for i in range(0,51)]
-        gridsearch_params_gamma = [i/50. for i in range(0,251)]
-        gridsearch_params_eta = [i/1000 for i in range(0,401)]
-        gridsearch_params_colsamp = [i/50 for i in range(30,51)]
-
-        gridsearch_params_pair_0_1 = [
-            (i0, i1)
-            for i0 in gridsearch_params_0_1_deep
-            for i1 in gridsearch_params_0_1_deep
-            ]
-        
-        gridsearch_params_colsamp_pair_0_1 = [
-            (i0, i1)
-            for i0 in gridsearch_params_colsamp
-            for i1 in gridsearch_params_colsamp
-            ]
-
-    
-    result_col = "test-" + metrics + "-mean"
-    cv_results = xgb.cv(            
-        params,
-        dtrain,
-        verbose_eval = verbose_eval,
-        num_boost_round = num_boost_round,
-        early_stopping_rounds = early_stopping_rounds,
-        stratified = Skfold,
-        nfold=nfold,
-        metrics=metrics
-    )
+        result_col = "test-" + metrics + "-mean"
+        cv_results = xgb.cv(            
+            params,
+            dtrain,
+            verbose_eval = verbose_eval,
+            num_boost_round = num_boost_round,
+            early_stopping_rounds = early_stopping_rounds,
+            stratified = Skfold,
+            nfold=nfold,
+            metrics=metrics
+            )
     
    
-    print("Unoptimized xgb.cv params xgb.cv params: {}: {}".format(metrics, cv_results[result_col].min()))
+        print("Unoptimized xgb.cv params xgb.cv params: {}: {}".format(metrics, cv_results[result_col].min()))
 
 
-    #Tries to do semi-automatic genetic model for hyperparameter selection
-    for round in range(rounds):
+        #Tries to do semi-automatic genetic model for hyperparameter selection
+        for round in range(rounds):
     
-        #Maximum depth/height of a tree
-        #Minimum sum of instance weight (hessian) needed in a child
-        param_a = 'max_depth'
-        param_b = 'min_child_weight'
-        params=two_values(gridsearch_params_tree, param_a, param_b, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
+            #Maximum depth/height of a tree
+            #Minimum sum of instance weight (hessian) needed in a child
+            param_a = 'max_depth'
+            param_b = 'min_child_weight'
+            params=two_values(gridsearch_params_tree, param_a, param_b, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
 
 
-        #L1 regularization term on weights - alpha  - Lasso Regression 
-        #adds “absolute value of magnitude” of coefficient as penalty term to the loss function.
-        #L2 regularization term on weights - lambda  - Ridge Regression 
-        #adds “squared magnitude” of coefficient as penalty term to the loss function.
-        #the sample is so small, so most propably no effect
-        param_a = 'lambda'
-        param_b = 'alpha'
-        params=two_values(gridsearch_params_pair_0_1 , param_a, param_b, params, dtrain,  num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
+            #L1 regularization term on weights - alpha  - Lasso Regression 
+            #adds “absolute value of magnitude” of coefficient as penalty term to the loss function.
+            #L2 regularization term on weights - lambda  - Ridge Regression 
+            #adds “squared magnitude” of coefficient as penalty term to the loss function.
+            #the sample is so small, so most propably no effect
+            param_a = 'lambda'
+            param_b = 'alpha'
+            params=two_values(gridsearch_params_pair_0_1 , param_a, param_b, params, dtrain,  num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
+            
 
-
-        #Subsamble denotes the fraction of observations to be randomly samples for each tree.
-        #Colsample_bytree enotes the fraction of columns to be randomly samples for each tree.
-        param_a = 'colsample_bytree'
-        param_b = 'subsample'
-        params=two_values(gridsearch_params_colsamp_pair_0_1, param_a, param_b, params, dtrain, num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
-    
-        #Same as learning_rate - this needs to be in sync with num_boost_round (alias n_tree parameter)
-        param_a = 'eta'
-        params=one_value(gridsearch_params_eta, param_a, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
+            #Subsamble denotes the fraction of observations to be randomly samples for each tree.
+            #Colsample_bytree enotes the fraction of columns to be randomly samples for each tree.
+            param_a = 'colsample_bytree'
+            param_b = 'subsample'
+            params=two_values(gridsearch_params_colsamp_pair_0_1, param_a, param_b, params, dtrain, num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
+            
+            #Same as learning_rate - this needs to be in sync with num_boost_round (alias n_tree parameter)
+            param_a = 'eta'
+            params=one_value(gridsearch_params_eta, param_a, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
         
-        #Balance of positive and negative weights.  This is regression and binary classification only parameter.
-        if params['objective'].startswith('reg'):
-            param_a = 'scale_pos_weight'
-            params=one_value(gridsearch_params_0_1_deep, param_a, params, dtrain, num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
+            #Balance of positive and negative weights.  This is regression and binary classification only parameter.
+            if params['objective'].startswith('reg'):
+                param_a = 'scale_pos_weight'
+                params=one_value(gridsearch_params_0_1_deep, param_a, params, dtrain, num_boost_round, early_stopping_rounds, Skfold, nfold, Verbose)
 
-        #Gamma finds minimum loss reduction/min_split_loss required to make a further partition 
-        param_a = 'gamma'
-        params=one_value(gridsearch_params_gamma, param_a, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
+            #Gamma finds minimum loss reduction/min_split_loss required to make a further partition 
+            param_a = 'gamma'
+            params=one_value(gridsearch_params_gamma, param_a, params, dtrain, num_boost_round, early_stopping_rounds,  Skfold, nfold, Verbose)
     
 
-    print('Found hyperparameters with {} rounds '.format(round+1))
-    print(params)
-    print()
+        print('Found hyperparameters with {} rounds '.format(round+1))
+        print(params)
+        print()
     
-    model = xgb.train(
-        params,
-        dtrain,
-        verbose_eval = verbose_eval,
-        num_boost_round = num_boost_round,
-        early_stopping_rounds = early_stopping_rounds,
-        evals = watchlist,
-        )   
+        model = xgb.train(
+            params,
+            dtrain,
+            verbose_eval = verbose_eval,
+            num_boost_round = num_boost_round,
+            early_stopping_rounds = early_stopping_rounds,
+            evals = watchlist,
+            )   
         
-    num_boost_round = model.best_iteration + 1
+        num_boost_round = model.best_iteration + 1
 
-    best_model = xgb.train(
-        params,
-        dtrain,
-        verbose_eval = num_boost_round,
-        num_boost_round = num_boost_round,
-        evals = watchlist,
-        )
-    print('Best numboost {} '.format(num_boost_round))
-    print()
-
+        best_model = xgb.train(
+            params,
+            dtrain,
+            verbose_eval = num_boost_round,
+            num_boost_round = num_boost_round,
+            evals = watchlist,
+            )
+        print('Best numboost {} '.format(num_boost_round))
+        print()
+    else:
+        best_model = model
     
     return(best_model, params)
 
@@ -481,14 +482,24 @@ def create_prediction(filename_model,  path, train, test, target, params, numeri
     
     dtrain = xgb.DMatrix(X_train, label=y_train)
     dvalidate = xgb.DMatrix(X_validate, label=y_validate)
-
     filename_model = os.path.join(path, filename_model)
-    model = load_obj(filename_model)
-    if model == None:
+    
+    
+    model_features = load_obj(filename_model)
+    
+    if model_features == None:
         model, params = hyperparameter_grid(params, dtrain, dvalidate, testing, Skfold, Verbose)
-        save_obj(model, filename_model)
+        model_features = {
+            'model': model,
+            'numeric_features': numeric_features,
+            'categorical_features' : categorical_features
+            }
+
+        save_obj(model_features, filename_model)
     else:
+        model = model_features['model']
         config = model.save_config()
+        
         list_of_float_params = ['max_depth', 'min_child_weight', 'lambda', 'alpha', 'colsample_bytree', 'subsample', 'eta', 'gamma']
         list_of_int_params = ['max_depth', 'min_child_weight']
         for par in list_of_float_params:

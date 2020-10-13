@@ -1,6 +1,6 @@
 
 def read_and_prepare_data(path, readapi=False):
-    
+
     """This function calls functions to read all needed data
        and transforms it to ready made data
         
@@ -71,7 +71,8 @@ def read_and_prepare_data(path, readapi=False):
                                         'Asukkaiden keskitulot, 2017 (HR)', 'Talouksien keskitulot, 2017 (TR)',
                                         'Asuntojen keskipinta-ala, 2018 (RA)', 'Talouksien keskikoko, 2018 (TE)',
                                         'Talouksien mediaanitulot, 2017 (TR)', 'Ruotsinkielisten osuus väestöstä, %, 2019',
-                                        'Taajama-aste, %, 2018','Ulkomaan kansalaisten osuus väestöstä, %, 2019']
+                                        'Taajama-aste, %, 2018','Ulkomaan kansalaisten osuus väestöstä, %, 2019',
+                                        'Tuloveroprosentti']
         
         col_list_osuuus_asukkaat  = ['Miehet, 2018 (HE)', 'Naiset, 2018 (HE)', 'Taloudet yhteensä, 2018 (TE)', 
                                      'Työlliset, 2017 (PT)', 'Työttömät, 2017 (PT)', 
@@ -90,8 +91,10 @@ def read_and_prepare_data(path, readapi=False):
                 col_tot_asukkaat)
        
 
-        stat = create_share_of_values(stat)
+        stat = create_share_of_values(stat, pnroalue = True)
         stat = create_new_values(stat, vaalidata)
+        
+        kunta_stat = create_share_of_values(kunta_stat, pnroalue = False)
         
         col_list_negatives = ['Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat']
         stat=manage_negatives(stat, col_list_negatives)

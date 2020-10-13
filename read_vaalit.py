@@ -129,8 +129,7 @@ def aaniosuudet(kiint, post, url_puolueet, url_alueet):
     vaalidata = vaalidata.append(kaikki, sort=False)
     vaalidata=vaalidata[['Vaalilaji', 'Vaalipiirinumero', 'Kuntanumero', 'Alueen tyyppi','Äänestysalue', 'Puolueen nimilyhenne suomeksi', 'Äänet yhteensä lkm', 'Ennakkoäänet lkm', 'Vaalipäivän äänet lkm']]
     vaalidata.reset_index(inplace=True)
-    vaalidata['Vaalipiirinumero'] = pd.to_numeric(vaalidata['Vaalipiirinumero'], errors='coerce')
-    vaalidata['Kuntanumero'] = pd.to_numeric(vaalidata['Kuntanumero'], errors='coerce')
+
     
     areas=post.groupby(['muncipality_code','area_code'],as_index=False ).mean()[['muncipality_code', 'area_code']][['muncipality_code', 'area_code']]
     vaalidata = pd.merge(left=vaalidata, right=areas, left_on = 'Kuntanumero', right_on='muncipality_code')
@@ -175,6 +174,7 @@ def aaniosuudet(kiint, post, url_puolueet, url_alueet):
     osuudet.columns = osuudet.columns.str.strip()
 
     vaalidata = vaalidata[vaalidata['Äänestysalue'].notna()].copy()
+    vaalidata.loc[:,['Vaalipiirinumero', 'Kuntanumero',  'Äänet yhteensä lkm', 'Ennakkoäänet lkm', 'Vaalipäivän äänet lkm']] = vaalidata[['Vaalipiirinumero', 'Kuntanumero',  'Äänet yhteensä lkm', 'Ennakkoäänet lkm', 'Vaalipäivän äänet lkm']].astype(int)
 
     return(osuudet, vaalidata)
 

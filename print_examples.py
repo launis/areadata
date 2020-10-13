@@ -34,7 +34,7 @@ def create_example_df(compare_to, X, included_columns, shap_values, col_num=5):
     col_list=k2['Variable'].head(col_num).to_list()
     new_x = list(OrderedSet(X.columns.to_list())- (OrderedSet(X.columns.to_list())-OrderedSet(col_list)))
     new_x = list(OrderedSet(new_x)-OrderedSet(included_columns))
-    
+
     X = X.iloc[list(compare_to.index.values.tolist())]
     new_df=pd.concat([compare_to[included_columns],X[new_x]], axis=1)
     return(new_df, k2, col_list)
@@ -100,68 +100,152 @@ def plot_difference(data, compare_to,  X, included_columns, shap_values,  col_nu
     stats_data.plot(kind='bar', figsize=(15, 10))
     return(stats_data, k2)
 
-def create_party_results(target_col_start, val, data, compare_value):
+def cluster_dedndogram(X):
+
+    import scipy as sp
+    import matplotlib.pyplot as plt
+
+    D = sp.spatial.distance.pdist(X.fillna(X.mean()).T, metric="correlation")
+    cluster_matrix = sp.cluster.hierarchy.complete(D)
+    plt.figure(figsize=(15, 6))
+    plt.title('Hierarchical Clustering Dendrogram')
+    plt.xlabel('sample index')
+    plt.ylabel('distance')
+    sp.cluster.hierarchy.dendrogram(
+        cluster_matrix,
+        leaf_rotation=90.,  # rotates the x axis labels
+        leaf_font_size=10.,  # font size for the x axis labels
+        labels=X.columns
+    )
+    plt.show()
+
+
+def create_party_results(target_col_start, val, data, vaalidata, compare_value):
+
+    from create_share_of_values import create_share_of_values
+    from create_new_values import create_new_values
 
     target = target_col_start + str(val)
     aanet = 'Äänet yhteensä lkm ' + str(val)
 
     compared_value = compare_value * (data[aanet].sum()/data['Äänet yhteensä lkm Äänet'].sum())
     compare_to = data[(data[target]) > compared_value].copy()
-    return(compare_to, target, aanet)
+        
+    compare_to = create_share_of_values(compare_to)
+    compare_to = create_new_values(compare_to, vaalidata)
+    return(compare_to, target)
     
     
-def create_compare(target_col_start, val, data):
+def create_compare(target_col_start, val, data, vaalidata):
+    
+    from create_share_of_values import create_share_of_values
+    from create_new_values import create_new_values
 
     target = target_col_start + str(val)
 
     compare_to = data[(data[target]) == 1].copy()
-    return(compare_to, target)
-
-
-
-
-
-def show_all_results(compare_to, data, X, y, model, vaalidata, shap_values, target, columns, all_included_columns, show_cols, scaled=True, included_columns=[], samples=5):
-
-    import shap    
-    from create_new_values import create_new_values
-    from create_share_of_values import create_share_of_values
-    
     compare_to = create_share_of_values(compare_to)
     compare_to = create_new_values(compare_to, vaalidata)
     
-    comp_col = 'Miehet, 2018 (HE) osuudesta asukkaat'
+    return(compare_to, target)
+
+
+def compare_scatter(selected_cols, included_col_start, X, col1, col2, shap_data, ylim_min=-0.05, ylim_max=0.05):
+    import matplotlib.pyplot as plt
+    import shap
+    from create_target_columns import create_target_columns
+
+    columns_to_print = create_target_columns(selected_cols, included_col_start)
+    
+    for t in columns_to_print:
+
+        shap.plots.scatter(shap_data[t]['shap_values'][:,col1], color=shap_data[t]['shap_values'][:,col2],  show=False)
+        plt.ylim([ylim_min, ylim_max]) 
+        plt.title(t)
+    plt.show()
+
+
+# we can use shap.approximate_interactions to guess which features may interact 
+def print_scatter(shap_values, t, order = 0, rng =  5, low = 0, high = 100):
+
+    
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import shap
+    
+
+    top_inds = np.argsort(-np.sum(np.abs(shap_values.values), 0))
+    
+    
+    
+    
+    interaction  = np.where(top_inds==order)[0].item()
+    
+    inds=shap.utils.potential_interactions(shap_values[:, interaction], shap_values)
+
+    feature = shap_values[:,interaction]
+    
+    # make plots colored by each of the top three possible interacting features
+    for i in range(rng):
+        shap.plots.scatter(feature, color=shap_values[:,inds[i]], ymin=feature.percentile(low), ymax=feature.percentile(high), xmin=feature.percentile(low), xmax=feature.percentile(high), show=False)
+        plt.title(t)
+        # plt.savefig("my_dependence_plot.pdf") # we can save a PDF of the figure if we want
+        plt.show()
+
+def show_all_results(compare_to, data, X, y, shap_data, target, columns, all_included_columns, show_cols, comp_col, scaled=True, included_columns=[], samples=5):
+    
+    import shap
+    import matplotlib.pyplot as plt
+
+    shap_values = shap_data['shap_values']
+    expected_value = shap_data['expected_value']
+    shap_interaction_values = shap_data['shap_interaction_values']
+    shap_values_Partition = shap_data['shap_values_Partition']
+    shap_values_Permutation = shap_data['shap_values_Permutation']
+    clustering = shap_data['clustering']
+        
     comp = X[comp_col]>X[comp_col].median()
     
+    shap.plots.bar(shap_values, max_display=columns, show=False)
+    plt.title(target)
+    plt.show()
+    shap.plots.bar(shap_values_Partition, max_display=columns, show=False)
+    plt.title(target)
+    plt.show()
+    shap.plots.bar(shap_values_Permutation, max_display=columns, show=False)
+    plt.title(target)
+    plt.show()
+    shap.plots.beeswarm(shap_values, max_display=columns, show=False)
+    plt.title(target)
+    plt.show()
+    shap.plots.bar(shap_values.cohorts(2).mean(0), show=False)
+    plt.title(target)
+    plt.show()
 
+    shap.plots.bar(shap_values, clustering=clustering, max_display=columns, clustering_cutoff=0.6, show=False)
+    plt.title(target)
+    plt.show()
+    shap.group_difference_plot(shap_values_Permutation.values, comp, feature_names=X.columns, max_display=columns, show=False)
+    plt.title(target + "\n verrattuna " + comp_col)
+    plt.show()
+    shap.decision_plot(expected_value,shap_values.values, X, feature_order='hclust', feature_display_range=range(columns, -1, -1), ignore_warnings=True, show=False)
+    plt.title(target)
+    plt.show()
+    
+    shap.plots.heatmap(shap_values_Permutation, instance_order=shap_values_Permutation.sum(1), max_display=columns, show=False)
+    plt.title(target)
+    plt.show()
+    
+    
+    for order in range(3):
+        print_scatter(shap_values_Permutation, target, order = order, rng =  3, low = 1, high = 99)  
 
-    shap.plots.bar(shap_values, max_display=columns)
-    shap.plots.beeswarm(shap_values, max_display=columns)
-    shap.plots.bar(shap_values.cohorts(2).mean(0))
-    clustering = shap.utils.hclust(X, y)
-    shap.plots.bar(shap_values, clustering=clustering, max_display=columns, cluster_threshold=0.6)
-    shap.group_difference_plot(shap_values.values, comp, feature_names=X.columns, max_display=columns)
-    
-    explainer =  shap.TreeExplainer(model)
-    expected_value = explainer.expected_value[0]
-    shap_interaction_values = explainer.shap_interaction_values(X)
-
-    shap.decision_plot(expected_value, shap_interaction_values, X, 
-                   feature_order='hclust', feature_display_range=range(12, -1, -1), ignore_warnings=True)
-    
-    shap.plots.heatmap(shap_values, instance_order=shap_values.sum(1), max_display=columns)
-    
-    
-    inds = shap.utils.potential_interactions(shap_values[:, shap_values.abs.mean(0).argsort[-1]], shap_values)
-
-    # make plots colored by each of the top three possible interacting features
-    for i in range(3):
-        shap.plots.scatter(shap_values[:, shap_values.abs.mean(0).argsort[-1]], color=shap_values[:,inds[i]])
-    stats_data, k = plot_difference(data, compare_to, X, included_columns, shap_values, col_num=columns, scaled=scaled)
+        
+    stats_data, k = plot_difference(data, compare_to, X, included_columns, shap_values_Permutation, col_num=columns, scaled=scaled)
     colorlist = k['Sign']
     k.sort_values(by='SHAP_abs',ascending = True, inplace=True)
-    ax = k.tail(columns).plot.barh(x='Variable',y='SHAP_abs',color = colorlist, figsize=(6,8),legend=False, fontsize=20)
-    ax.set_xlabel("SHAP Value (Punainen = Korostaa)")
+    k.tail(columns).plot.barh(x='Variable',y='SHAP_abs',color = colorlist, figsize=(6,8),legend=False, fontsize=14)
+    plt.show()
     stats_data_party, k = plot_difference(data, compare_to, X, all_included_columns, shap_values, col_num=0, scaled=False)
     new = show_cols.copy()
     new.append(target)
@@ -174,26 +258,33 @@ def show_all_results(compare_to, data, X, y, model, vaalidata, shap_values, targ
         display(new_df.sample(samples))
     return(stats_data, k, col_list)
 
-def show_one_results(data, X, y, model, shap_values, included, pnro, columns):
+def show_one_results(data, X, y, model, shap_data, target, key, key_value, columns):
     
     import shap
+    import matplotlib.pyplot as plt
 
     shap_val = []
     shap_bas = []
     shap_clu = {}
     
-    for i in included:
-        shap_clu[i]=shap.utils.hclust(X, y[i])
-        shap_val.append(shap_values[i].values)
-        shap_bas.append(shap_values[i].base_values[0])
-    shap.multioutput_decision_plot(shap_bas,shap_val, row_index=data[data['Postinumero']==pnro].index.to_list()[0], feature_names=list(X.columns), legend_labels=included, ignore_warnings=True)
+    
+    for i in target:
+        shap_val.append(shap_data[i]['shap_values_Permutation'].values)
+        shap_bas.append(shap_data[i]['shap_values_Permutation'].base_values[0])
+        shap_clu[i] = shap_data[i]['clustering']
+        
+        
+        
+    shap.multioutput_decision_plot(shap_bas,shap_val, row_index=data[data[key]==key_value].index.to_list()[0], feature_names=list(X.columns), legend_labels=target, ignore_warnings=True, show=False)
+    plt.title(key_value)
+    plt.show()
 
-    for i in included:
-        print(i)
-        pnro_shap = shap_values[i][data[data['Postinumero']==pnro].index.to_list()[0]]
-        shap.plots.bar(pnro_shap, clustering=shap_clu[i], max_display=columns, cluster_threshold=0.6)
-        shap.plots.waterfall(pnro_shap)
-        explainer = shap.TreeExplainer(model[i])
-        expected_value = explainer.expected_value
-        shap.decision_plot(expected_value, pnro_shap.values, X.iloc[data[data['Postinumero']==pnro].index.to_list()[0]],feature_order='hclust')
-
+    for i in target:
+        key_shap = shap_data[i]['shap_values_Permutation'][data[data[key]==key_value].index.to_list()[0]]
+        shap.plots.bar(key_shap, clustering=shap_clu[i], max_display=columns, clustering_cutoff=0.6, show=False)
+        plt.title(i + " " + key_value)
+        plt.show()
+    
+        shap.plots.waterfall(key_shap, show=False)
+        plt.title(i + " " + key_value)
+        plt.show()

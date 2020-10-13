@@ -1,4 +1,4 @@
-def selected_cols(largeset = False, parties=True):
+def selected_cols(largeset = False, parties=True, pnroalue = True):
 
     if largeset==True:
         numeric_features =  ['Miehet, 2018 (HE) osuudesta asukkaat',
@@ -15,7 +15,6 @@ def selected_cols(largeset = False, parties=True):
                              'Ylemmän korkeakoulututkinnon suorittaneet, 2018 (KO) osuudesta asukkaat',
                              'Asukkaiden mediaanitulot, 2017 (HR) osuudesta asukkaat',
                              'Asukkaiden ostovoimakertymä, 2017 (HR) osuudesta asukkaat osuus total',
-                             'Kerrostaloasunnot, 2018 (RA) osuudesta asukkaat',
                              'Kesämökit yhteensä, 2018 (RA) osuudesta asukkaat',
                              'Pientaloasunnot, 2018 (RA) osuudesta asukkaat',
                              'Työlliset, 2017 (PT) osuudesta asukkaat',
@@ -74,11 +73,12 @@ def selected_cols(largeset = False, parties=True):
                              'Ruotsinkielisten osuus väestöstä, %, 2019',
                              'Taajama-aste, %, 2018',
                              'Ulkomaan kansalaisten osuus väestöstä, %, 2019',
-                             'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta']
+                             'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta',
+                             'etaisyys osuus area_code','tkalue',
+                             'Tuloveroprosentti']
 
     else:
         numeric_features = ['Miehet, 2018 (HE) osuudesta asukkaat',
-                             'Naiset, 2018 (HE) osuudesta asukkaat',
                              'Asuntojen keskipinta-ala, 2018 (RA) osuus total',
                              'Talotyypit yhteensä 2019 Neliöhinta (EUR/m2) osuus total',
                              'Asumisväljyys, 2018 (TE) osuus total',
@@ -90,7 +90,6 @@ def selected_cols(largeset = False, parties=True):
                              'Alemman korkeakoulututkinnon suorittaneet, 2018 (KO) osuudesta asukkaat',
                              'Ylemmän korkeakoulututkinnon suorittaneet, 2018 (KO) osuudesta asukkaat',
                              'Asukkaiden ostovoimakertymä, 2017 (HR) osuudesta asukkaat osuus total',
-                             'Asunnot, 2018 (RA) osuudesta asukkaat',
                              'Kerrostaloasunnot, 2018 (RA) osuudesta asukkaat',
                              'Kesämökit yhteensä, 2018 (RA) osuudesta asukkaat',
                              'Pientaloasunnot, 2018 (RA) osuudesta asukkaat',
@@ -109,7 +108,6 @@ def selected_cols(largeset = False, parties=True):
                              'Nuorten yksinasuvien taloudet, 2018 (TE) osuudesta taloudet',
                              'Lapsettomat nuorten parien taloudet, 2018 (TE) osuudesta taloudet',
                              'Lapsitaloudet, 2018 (TE) osuudesta taloudet',
-                             'Teini-ikäisten lasten taloudet, 2018 (TE) osuudesta taloudet',
                              'Aikuisten taloudet, 2018 (TE) osuudesta taloudet',
                              'Eläkeläisten taloudet, 2018 (TE) osuudesta taloudet',
                              'Omistusasunnoissa asuvat taloudet, 2018 (TE) osuudesta taloudet',
@@ -134,7 +132,9 @@ def selected_cols(largeset = False, parties=True):
                              'Ruotsinkielisten osuus väestöstä, %, 2019',
                              'Taajama-aste, %, 2018',
                              'Ulkomaan kansalaisten osuus väestöstä, %, 2019',
-                             'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta']
+                             'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta',
+                             'etaisyys osuus area_code', 'tkalue',
+                             'Tuloveroprosentti']
 
     col_puolueet = ['Ääniosuus KD',
                     'Ääniosuus KESK',
@@ -146,8 +146,12 @@ def selected_cols(largeset = False, parties=True):
                     'Ääniosuus VIHR',
                     'Äänestysosuus']
     
+    if not pnroalue:
+        not_in_kunta = ['Myymälät osuudesta asukkaat', 'Postinumeroalueen pinta-ala osuus area_code', 'Kuntien välinen muuttovoitto/-tappio, henkilöä, 2019 osuudesta asukkaat nollatta', 'etaisyys osuus area_code', 'tkalue', 'Ravintolat osuudesta asukkaat']    
+        removeset = set(not_in_kunta)
+        numeric_features[:] = [x for x in numeric_features if x not in removeset]
     
-    categorical_features=['language_code']
+    categorical_features=[]
 
     if parties:
         numeric_features = numeric_features + col_puolueet
